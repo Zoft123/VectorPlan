@@ -4,6 +4,8 @@ Interactive floorplans for Home Assistant can be a huge task for anyone new to t
 
 It will generate YAML, CSS, or SVG code for you. Just drop in your floorplan picture, drag and drop your items (like lights and fans), trace your rooms, and wow! It generates the exact code you need for the Home Assistant `custom:floorplan-card`. Piece of cake!
 
+## Live Demo: https://zoft123.github.io/VectorPlan/
+
 ## ✨ What makes it easier?
 
 - **Drag and Drop:** Just click and move your smart home devices right where you want them.
