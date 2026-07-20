@@ -49,7 +49,6 @@ export default function App() {
 
   const dropdownRef = useRef(null);
 
-  // Synchronize the isDark state with the actual HTML element
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
@@ -98,12 +97,15 @@ export default function App() {
     const id = Date.now();
     const newEnt = {
       id, kind, name: `New ${kind}`,
-      entityId: `${kind.toLowerCase()}.new_${kind.toLowerCase()}`,
+      entityId: ['Door', 'Window'].includes(kind) ? '' : `${kind.toLowerCase()}.new_${kind.toLowerCase()}`,
       svgId: `new_${kind.toLowerCase()}`,
       x: canvasSize.width / 2, y: canvasSize.height / 2, radius: kind === 'Garage' ? 60 : 40,
       lightStyle: 'glow', targetRoomId: '', glowRx: 150, glowRy: 150, whiteIntensity: 60, tintIntensity: 50,
-      spinSpeed: '2s', spinDirection: 'spin-cw', color: '#000000',
-      unlockedColor: '#22c55e', lockedColor: '#000000', customSVG: '', isOn: false
+      spinSpeed: '2s', spinDirection: 'spin-cw', color: '#94a3b8',
+      unlockedColor: '#22c55e', lockedColor: '#000000', 
+      onColor: '#22c55e', offColor: '#94a3b8',
+      width: 80, depth: 10, angle: 0, flip: false,
+      customSVG: '', isOn: false
     };
     setEntities([...entities, newEnt]);
     setSelectedId(id);
@@ -165,6 +167,7 @@ export default function App() {
             editorSettings={editorSettings}
             roomNamePrompt={roomNamePrompt} setRoomNamePrompt={setRoomNamePrompt}
             roomNameInput={roomNameInput} setRoomNameInput={setRoomNameInput}
+            isFullscreen={isFullscreen}
           />
         </div>
 

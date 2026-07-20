@@ -108,13 +108,62 @@ export function Inspector({
                      </div>
                    </div>
                 </>
+             ) : ['Door', 'Window'].includes(selectedEntity.kind) ? (
+                <>
+                   <div className="grid grid-cols-2 gap-4">
+                     <div>
+                       <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Kind</label>
+                       <select value={selectedEntity.kind} onChange={(e) => updateEntity(selectedEntity.id, { kind: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none">
+                         <option value="Door">Door</option>
+                         <option value="Window">Window</option>
+                       </select>
+                     </div>
+                     <div>
+                       <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Label</label>
+                       <input type="text" value={selectedEntity.name} onChange={(e) => updateEntity(selectedEntity.id, { name: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none" />
+                     </div>
+                   </div>
+
+                   <div className="mb-4">
+                     <p className="text-[10px] text-slate-500 dark:text-slate-400">Structural elements are purely visual and do not link to Home Assistant entities. They will be added directly to the generated SVG.</p>
+                   </div>
+
+                   <h3 className="text-xs font-bold text-slate-500 mt-6 mb-2 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800 pb-1">Dimensions & Placement</h3>
+                   
+                   <div className="grid grid-cols-3 gap-2 mb-3">
+                     <div><label className="block text-[10px] text-slate-400 mb-1">CENTER X</label><input type="number" value={Math.round(selectedEntity.x)} onChange={(e) => updateEntity(selectedEntity.id, { x: parseInt(e.target.value) || 0 })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-1.5 text-xs text-center focus:ring-2 outline-none font-mono" /></div>
+                     <div><label className="block text-[10px] text-slate-400 mb-1">CENTER Y</label><input type="number" value={Math.round(selectedEntity.y)} onChange={(e) => updateEntity(selectedEntity.id, { y: parseInt(e.target.value) || 0 })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-1.5 text-xs text-center focus:ring-2 outline-none font-mono" /></div>
+                     <div><label className="block text-[10px] text-slate-400 mb-1">ANGLE (deg)</label><input type="number" value={selectedEntity.angle || 0} onChange={(e) => updateEntity(selectedEntity.id, { angle: parseInt(e.target.value) || 0 })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-1.5 text-xs text-center focus:ring-2 outline-none font-mono" /></div>
+                   </div>
+
+                   <div className="grid grid-cols-2 gap-4">
+                     <div><label className="block text-[10px] text-slate-400 mb-1 uppercase">Opening Size</label><input type="number" value={selectedEntity.width || 80} onChange={(e) => updateEntity(selectedEntity.id, { width: parseInt(e.target.value) || 10 })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono" /></div>
+                     <div><label className="block text-[10px] text-slate-400 mb-1 uppercase">Wall Thickness</label><input type="number" value={selectedEntity.depth || 10} onChange={(e) => updateEntity(selectedEntity.id, { depth: parseInt(e.target.value) || 2 })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono" /></div>
+                   </div>
+
+                   <h3 className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-6 mb-2 pt-2 border-t border-slate-100 dark:border-slate-800">Structural Styling</h3>
+                   <div className="mb-4">
+                     <label className="block text-xs text-slate-400 mb-1">Blueprint Color</label>
+                     <div className="flex items-center gap-3">
+                        <input type="color" value={selectedEntity.color || '#94a3b8'} onChange={(e) => updateEntity(selectedEntity.id, { color: e.target.value })} className="w-10 h-10 rounded cursor-pointer border-0 p-0" />
+                        <span className="text-xs text-slate-500 font-mono bg-slate-50 dark:bg-slate-950 px-2 py-1 rounded border border-slate-200 dark:border-slate-800">{selectedEntity.color || '#94a3b8'}</span>
+                     </div>
+                   </div>
+
+                   {selectedEntity.kind === 'Door' && (
+                     <div className="mb-4 flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <label className="text-xs font-semibold">Flip Door Swing</label>
+                        <input type="checkbox" checked={selectedEntity.flip || false} onChange={(e) => updateEntity(selectedEntity.id, { flip: e.target.checked })} className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer" />
+                     </div>
+                   )}
+                </>
              ) : (
                 <>
                    <div className="grid grid-cols-2 gap-4">
                      <div>
                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Kind</label>
                        <select value={selectedEntity.kind} onChange={(e) => updateEntity(selectedEntity.id, { kind: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none">
-                         <option value="Light">Light</option><option value="Sensor">Sensor</option><option value="Camera">Camera</option><option value="Fan">Fan</option><option value="Lock">Lock</option><option value="Garage">Garage Door</option><option value="Thermostat">Thermostat</option><option value="Other">Other</option>
+                         <option value="Light">Light</option><option value="Sensor">Sensor</option><option value="Camera">Camera</option><option value="Fan">Fan</option><option value="Lock">Lock</option><option value="Outlet">Outlet</option><option value="Garage">Garage Door</option><option value="Thermostat">Thermostat</option><option value="Other">Other</option>
                        </select>
                      </div>
                      <div>
@@ -173,6 +222,30 @@ export function Inspector({
                      </div>
                    )}
 
+                   {selectedEntity.kind === 'Outlet' && (
+                     <div className="mt-4">
+                       <h3 className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 pt-2 border-t border-slate-100 dark:border-slate-800">Outlet Styling</h3>
+                       <div className="grid grid-cols-2 gap-4 mb-4">
+                         <div>
+                           <label className="block text-xs text-slate-400 mb-1">On Color</label>
+                           <div className="flex items-center gap-2">
+                              <input type="color" value={selectedEntity.onColor || '#22c55e'} onChange={(e) => updateEntity(selectedEntity.id, { onColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                           </div>
+                         </div>
+                         <div>
+                           <label className="block text-xs text-slate-400 mb-1">Off Color</label>
+                           <div className="flex items-center gap-2">
+                              <input type="color" value={selectedEntity.offColor || '#94a3b8'} onChange={(e) => updateEntity(selectedEntity.id, { offColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                           </div>
+                         </div>
+                       </div>
+                       <div className="mb-4">
+                         <label className="block text-xs text-slate-400 mb-1">CUSTOM SVG CODE (Optional)</label>
+                         <textarea rows={3} placeholder='<svg viewBox="0 0 24 24"><path d="..."/></svg>' value={selectedEntity.customSVG || ''} onChange={(e) => updateEntity(selectedEntity.id, { customSVG: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono" />
+                       </div>
+                     </div>
+                   )}
+
                    {selectedEntity.kind === 'Lock' && (
                      <div className="mt-4">
                        <h3 className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 pt-2 border-t border-slate-100 dark:border-slate-800">Lock Styling</h3>
@@ -203,7 +276,7 @@ export function Inspector({
                        <p className="text-xs text-slate-500 dark:text-slate-400">This entity uses custom open/closed 3D SVG illustrations automatically. Simply ensure your Entity ID points to a valid HA cover entity (e.g. cover.garage_door).</p>
                      </div>
                    )}
-
+                   
                    {selectedEntity.kind === 'Thermostat' && (
                      <div className="mt-4">
                        <h3 className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 pt-2 border-t border-slate-100 dark:border-slate-800">Thermostat Display</h3>
@@ -251,21 +324,20 @@ export function Inspector({
                        </div>
                      </div>
                    )}
-
-                   {/* Delete Button */}
-                   <div className="mt-8 pt-4 border-t border-red-100 dark:border-red-900/30">
-                     <button 
-                       onClick={() => {
-                         setEntities(prev => prev.filter(e => e.id !== selectedEntity.id));
-                         setSelectedId(null);
-                       }}
-                       className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg transition-colors text-sm font-semibold"
-                     >
-                       <Icons.Trash /> Delete {selectedEntity.kind === 'Room' ? 'Room' : 'Entity'}
-                     </button>
-                   </div>
                 </>
              )}
+
+             <div className="mt-8 pt-4 border-t border-red-100 dark:border-red-900/30">
+               <button 
+                 onClick={() => {
+                   setEntities(prev => prev.filter(e => e.id !== selectedEntity.id));
+                   setSelectedId(null);
+                 }}
+                 className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg transition-colors text-sm font-semibold"
+               >
+                 <Icons.Trash /> Delete {selectedEntity.kind}
+               </button>
+             </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-slate-500 text-center space-y-3">

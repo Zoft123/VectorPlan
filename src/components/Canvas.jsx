@@ -7,7 +7,8 @@ export function Canvas({
   isPanMode, setIsPanMode, isPanning, setIsPanning,
   drawingMode, setDrawingMode, drawnPoints, setDrawnPoints,
   mousePos, setMousePos, editorSettings,
-  roomNamePrompt, setRoomNamePrompt, roomNameInput, setRoomNameInput
+  roomNamePrompt, setRoomNamePrompt, roomNameInput, setRoomNameInput,
+  isFullscreen
 }) {
   const canvasRef = useRef(null);
   const scrollContainerRef = useRef(null);
@@ -131,6 +132,18 @@ export function Canvas({
 
   return (
     <div className="flex-1 bg-slate-200 dark:bg-slate-950 rounded-xl border border-slate-300 dark:border-slate-800 shadow-inner flex flex-col overflow-hidden relative">
+      
+      {!isFullscreen && (
+        <div className="flex-shrink-0 flex justify-between items-center bg-white/90 dark:bg-slate-900/90 backdrop-blur shadow-sm px-4 py-3 border-b border-slate-200 dark:border-slate-800 z-10">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold flex items-center gap-2"><Icons.Light /> Canvas View</span>
+            {drawingMode && <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-xs px-2 py-1 rounded animate-pulse">Click canvas to drop points. Click your original starting point (the red dot) to complete the room.</span>}
+            {isPanMode && <span className="text-xs px-2 py-1 text-slate-500">Pan Mode Active (Middle click to pan anytime)</span>}
+          </div>
+          <span className="text-xs text-slate-500 font-mono">Original Size: {canvasSize.width} × {canvasSize.height}</span>
+        </div>
+      )}
+
       <div className="absolute bottom-6 right-6 flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-xl overflow-hidden z-20 pointer-events-auto">
          <button onClick={() => {setIsPanMode(false); setDrawingMode(false);}} className={`p-2.5 transition-colors ${!isPanMode && !drawingMode ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`} title="Cursor Tool"><Icons.MousePointer /></button>
          <button onClick={() => {setIsPanMode(true); setDrawingMode(false);}} className={`p-2.5 border-r border-slate-200 dark:border-slate-700 transition-colors ${isPanMode ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`} title="Pan Tool (or Middle Click)"><Icons.Hand /></button>
@@ -140,15 +153,6 @@ export function Canvas({
          <button onClick={() => setZoom(z => Math.min(z + 0.25, 4))} className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"><Icons.ZoomIn /></button>
       </div>
 
-      <div className="absolute top-4 left-4 right-4 flex justify-between items-center bg-white/90 dark:bg-slate-900/90 backdrop-blur shadow-sm rounded-lg px-4 py-2 border border-slate-200 dark:border-slate-800 z-10 pointer-events-auto">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-semibold flex items-center gap-2"><Icons.Light /> Canvas View</span>
-          {drawingMode && <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 text-xs px-2 py-1 rounded animate-pulse">Click canvas to drop points. Click your original starting point (the red dot) to complete the room.</span>}
-          {isPanMode && <span className="text-xs px-2 py-1 text-slate-500">Pan Mode Active (Middle click to pan anytime)</span>}
-        </div>
-        <span className="text-xs text-slate-500 font-mono">Original Size: {canvasSize.width} × {canvasSize.height}</span>
-      </div>
-      
       <div 
         ref={scrollContainerRef}
         className={`flex-1 overflow-auto bg-slate-100 dark:bg-slate-900 relative ${cursorClass}`}
@@ -157,12 +161,14 @@ export function Canvas({
         onPointerUp={handlePointerUpCanvas}
         onPointerLeave={handlePointerUpCanvas}
       >
-         <div style={{ width: canvasSize.width * zoom, height: canvasSize.height * zoom, minWidth: '100%', minHeight: '100%', position: 'relative' }}>
+         <div style={{ width: (canvasSize.width * zoom) + 120, height: (canvasSize.height * zoom) + 120, minWidth: '100%', minHeight: '100%', position: 'relative' }}>
            
            <div 
              ref={canvasRef}
              className="absolute shadow-xl touch-none flex-shrink-0 bg-slate-800"
              style={{ 
+               top: 60,
+               left: 60,
                transform: `scale(${zoom})`,
                transformOrigin: 'top left',
                width: canvasSize.width, 
@@ -183,16 +189,20 @@ export function Canvas({
                   const isLit = editorSettings.mode === 'preview' && entities.some(l => l.kind === 'Light' && l.lightStyle === 'room' && l.targetRoomId === room.roomId && l.isOn);
                   const mappedLight = entities.find(l => l.kind === 'Light' && l.lightStyle === 'room' && l.targetRoomId === room.roomId);
                   
+                  const currentFill = isLit ? (room.fillColor || '#ffffff') : (room.offFillColor || '#000000');
+                  const currentOpacity = isLit ? ((room.opacity ?? 40) / 100) : ((room.offOpacity ?? 0) / 100);
+
                   return (
                     <polygon
                       key={room.id}
                       points={room.points.map(p => `${p.x},${p.y}`).join(' ')}
-                      fill={isLit || (editorSettings.mode === 'edit' && isSelected) ? (room.fillColor || '#ffffff') : 'transparent'}
-                      fillOpacity={isLit ? (room.opacity || 40) / 100 : (editorSettings.mode === 'edit' ? 0.1 : 0)}
+                      fill={editorSettings.mode === 'edit' && isSelected ? (room.fillColor || '#ffffff') : currentFill}
+                      fillOpacity={editorSettings.mode === 'edit' ? (isSelected ? 0.3 : 0.1) : currentOpacity}
                       stroke={editorSettings.mode === 'edit' ? (isSelected ? "#3b82f6" : "rgba(255,255,255,0.4)") : "transparent"}
                       strokeWidth={isSelected ? 2 : 1}
                       strokeDasharray={editorSettings.mode === 'edit' && !isSelected ? "4,4" : "none"}
-                      className={(editorSettings.mode === 'edit' && !isPanMode && !isPanning) ? 'pointer-events-auto cursor-pointer' : (editorSettings.mode === 'preview' && mappedLight && !isPanMode ? 'pointer-events-auto cursor-pointer' : '')}
+                      style={{ mixBlendMode: room.blendMode || 'screen' }}
+                      className={(editorSettings.mode === 'edit' && !isPanMode && !isPanning) ? 'pointer-events-auto cursor-move' : (editorSettings.mode === 'preview' && mappedLight && !isPanMode ? 'pointer-events-auto cursor-pointer' : '')}
                       onPointerDown={(e) => {
                          if (isPanMode || e.button === 1) return;
                          
@@ -216,6 +226,58 @@ export function Canvas({
                   )
                })}
 
+               {entities.filter(e => ['Door', 'Window'].includes(e.kind)).map(ent => {
+                 const isSelected = selectedId === ent.id;
+                 return (
+                   <g 
+                     key={ent.id}
+                     transform={`translate(${ent.x}, ${ent.y}) rotate(${ent.angle})`}
+                     className={(editorSettings.mode === 'edit' && !isPanMode && !isPanning) ? 'pointer-events-auto cursor-move' : ''}
+                     onPointerDown={(e) => {
+                       if (editorSettings.mode === 'edit') handleEntityPointerDown(e, ent);
+                     }}
+                   >
+                     {ent.kind === 'Window' && (
+                       <>
+                         <rect x={-ent.width/2} y={-ent.depth/2} width={ent.width} height={ent.depth} fill="#f8fafc" stroke={ent.color} strokeWidth="2" />
+                         <line x1={-ent.width/2} y1={0} x2={ent.width/2} y2={0} stroke={ent.color} strokeWidth="1" />
+                       </>
+                     )}
+                     
+                     {ent.kind === 'Door' && (
+                       <>
+                         <line x1={-ent.width/2} y1={-ent.depth/2} x2={-ent.width/2} y2={ent.depth/2} stroke={ent.color} strokeWidth="2" />
+                         <line x1={ent.width/2} y1={-ent.depth/2} x2={ent.width/2} y2={ent.depth/2} stroke={ent.color} strokeWidth="2" />
+                         <line x1={-ent.width/2} y1={0} x2={ent.width/2} y2={0} stroke={ent.color} strokeWidth="1" strokeDasharray="4 4" />
+                         <line x1={-ent.width/2} y1={0} x2={-ent.width/2} y2={ent.flip ? ent.width : -ent.width} stroke={ent.color} strokeWidth="3" strokeLinecap="round" />
+                         <path d={`M ${-ent.width/2},${ent.flip ? ent.width : -ent.width} A ${ent.width} ${ent.width} 0 0 ${ent.flip ? 0 : 1} ${ent.width/2},0`} fill="none" stroke={ent.color} strokeWidth="1" />
+                       </>
+                     )}
+                     
+                     <rect 
+                       x={-ent.width/2} 
+                       y={ent.kind === 'Door' ? (ent.flip ? 0 : -ent.width) : -ent.depth/2} 
+                       width={ent.width} 
+                       height={ent.kind === 'Door' ? ent.width : ent.depth} 
+                       fill="transparent" 
+                     />
+
+                     {isSelected && editorSettings.mode === 'edit' && (
+                       <rect 
+                         x={-ent.width/2 - 5} 
+                         y={ent.kind === 'Door' ? (ent.flip ? -5 : -ent.width - 5) : -ent.depth/2 - 5} 
+                         width={ent.width + 10} 
+                         height={ent.kind === 'Door' ? ent.width + 10 : ent.depth + 10} 
+                         fill="rgba(59, 130, 246, 0.1)" 
+                         stroke="#3b82f6" 
+                         strokeWidth="1" 
+                         strokeDasharray="3 3" 
+                       />
+                     )}
+                   </g>
+                 );
+               })}
+
                {drawingMode && drawnPoints.length > 0 && (
                  <>
                     <polygon points={drawnPoints.map(p => `${p.x},${p.y}`).join(' ')} fill="rgba(59, 130, 246, 0.2)" stroke="transparent" />
@@ -228,7 +290,7 @@ export function Canvas({
                )}
              </svg>
 
-             {entities.filter(e => e.kind !== 'Room').map(entity => {
+             {entities.filter(e => !['Room', 'Door', 'Window'].includes(e.kind)).map(entity => {
                const EntityIconCmp = Icons[entity.kind] || Icons.Sensor;
                return (
                 <div
@@ -271,6 +333,12 @@ export function Canvas({
                        >
                          {entity.customSVG ? <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:fill-current" dangerouslySetInnerHTML={{ __html: entity.customSVG }} /> : <Icons.Fan className="w-full h-full" />}
                        </div>
+                    </div>
+                  )}
+
+                  {editorSettings.mode === 'preview' && entity.kind === 'Outlet' && (
+                    <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center transition-colors duration-300 drop-shadow-md" style={{ color: entity.isOn ? (entity.onColor || '#22c55e') : (entity.offColor || '#94a3b8') }}>
+                       {entity.customSVG ? <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:fill-current" dangerouslySetInnerHTML={{ __html: entity.customSVG }} /> : <Icons.Outlet className="w-3/4 h-3/4" />}
                     </div>
                   )}
 

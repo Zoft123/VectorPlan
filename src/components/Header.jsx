@@ -10,7 +10,7 @@ export function Header({
     <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-6 py-4 flex items-center justify-between z-40 shadow-sm flex-shrink-0">
       <div>
         <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-          <img src="./vectorplan.png" alt="VectorPlan" className="w-8 h-8 object-contain" />
+          <img src="/vectorplan.png" alt="VectorPlan" className="w-8 h-8 object-contain" />
           VectorPlan Editor
         </h1>
         {!isFullscreen && <p className="text-sm text-slate-500 dark:text-slate-400">Visual editor for Home Assistant Floorplans</p>}
@@ -54,15 +54,21 @@ export function Header({
           
           {showAddMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 overflow-hidden">
+              <div className="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-900">Entities</div>
               <button onClick={() => addEntity('Light')} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><div className="text-yellow-500"><Icons.Light /></div> <span>Light</span></button>
               <button onClick={() => addEntity('Fan')} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><div className="text-blue-500"><Icons.Fan /></div> <span>Fan</span></button>
               <button onClick={() => addEntity('Lock')} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><div className="text-red-500"><Icons.Lock /></div> <span>Lock</span></button>
+              <button onClick={() => addEntity('Outlet')} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><div className="text-teal-500"><Icons.Outlet /></div> <span>Outlet</span></button>
               <button onClick={() => addEntity('Garage')} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><div className="text-stone-500"><Icons.Garage /></div> <span>Garage Door</span></button>
               <button onClick={() => addEntity('Thermostat')} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><div className="text-orange-500"><Icons.Thermostat /></div> <span>Thermostat</span></button>
               <button onClick={() => addEntity('Sensor')} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><div className="text-green-500"><Icons.Sensor /></div> <span>Sensor</span></button>
               <button onClick={() => addEntity('Camera')} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><div className="text-purple-500"><Icons.Camera /></div> <span>Camera</span></button>
-              <div className="h-px bg-slate-100 dark:bg-slate-700 my-1"></div>
               <button onClick={() => addEntity('Other')} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><div className="text-slate-500"><Icons.Sensor /></div> <span>Other</span></button>
+              
+              <div className="h-px bg-slate-200 dark:bg-slate-700"></div>
+              <div className="px-4 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-900">Structural</div>
+              <button onClick={() => addEntity('Door')} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><div className="text-blue-500"><Icons.Door /></div> <span>Door</span></button>
+              <button onClick={() => addEntity('Window')} className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><div className="text-cyan-500"><Icons.Window /></div> <span>Window</span></button>
             </div>
           )}
         </div>
