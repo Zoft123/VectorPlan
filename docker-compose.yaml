@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  vectorplan:
+    build: .
+    container_name: vectorplan-editor
+    restart: unless-stopped
+    ports:
+      - "8080:80"
