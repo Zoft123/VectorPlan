@@ -10,7 +10,7 @@ export function Header({
     <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-6 py-4 flex items-center justify-between z-40 shadow-sm flex-shrink-0">
       <div>
         <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-          <img src="/vectorplan.png" alt="VectorPlan" className="w-8 h-8 object-contain" />
+          <img src="./vectorplan.png" alt="VectorPlan" className="w-8 h-8 object-contain" />
           VectorPlan Editor
         </h1>
         {!isFullscreen && <p className="text-sm text-slate-500 dark:text-slate-400">Visual editor for Home Assistant Floorplans</p>}
