@@ -49,6 +49,15 @@ export default function App() {
 
   const dropdownRef = useRef(null);
 
+  // Synchronize the isDark state with the actual HTML element
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -119,7 +128,7 @@ export default function App() {
   };
 
   return (
-    <div className={isDark ? "dark" : ""}>
+    <div>
       <div className="min-h-screen h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200 flex flex-col overflow-hidden">
         
         <Header 
