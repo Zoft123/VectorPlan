@@ -2,7 +2,7 @@ import React from 'react';
 import { Icons } from '../utils/icons';
 
 export function Inspector({
-  entities, updateEntity, selectedId, haEntities,
+  entities, setEntities, updateEntity, selectedId, haEntities,
   editorSettings, setEditorSettings, paths, setPaths,
   handleImageUpload, setDrawingMode, setSelectedId
 }) {
@@ -203,7 +203,7 @@ export function Inspector({
                        <p className="text-xs text-slate-500 dark:text-slate-400">This entity uses custom open/closed 3D SVG illustrations automatically. Simply ensure your Entity ID points to a valid HA cover entity (e.g. cover.garage_door).</p>
                      </div>
                    )}
-                   
+
                    {selectedEntity.kind === 'Thermostat' && (
                      <div className="mt-4">
                        <h3 className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 pt-2 border-t border-slate-100 dark:border-slate-800">Thermostat Display</h3>
@@ -251,6 +251,19 @@ export function Inspector({
                        </div>
                      </div>
                    )}
+
+                   {/* Delete Button */}
+                   <div className="mt-8 pt-4 border-t border-red-100 dark:border-red-900/30">
+                     <button 
+                       onClick={() => {
+                         setEntities(prev => prev.filter(e => e.id !== selectedEntity.id));
+                         setSelectedId(null);
+                       }}
+                       className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg transition-colors text-sm font-semibold"
+                     >
+                       <Icons.Trash /> Delete {selectedEntity.kind === 'Room' ? 'Room' : 'Entity'}
+                     </button>
+                   </div>
                 </>
              )}
             </div>

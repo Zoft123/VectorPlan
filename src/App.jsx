@@ -135,7 +135,7 @@ export default function App() {
         <div className="flex flex-1 p-6 gap-6 overflow-hidden min-h-0">
           {!isFullscreen && (
             <Inspector 
-              entities={entities} updateEntity={updateEntity}
+              entities={entities} setEntities={setEntities} updateEntity={updateEntity}
               selectedId={selectedId} setSelectedId={setSelectedId}
               haEntities={haEntities} editorSettings={editorSettings}
               setEditorSettings={setEditorSettings} paths={paths} setPaths={setPaths}
