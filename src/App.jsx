@@ -35,6 +35,7 @@ export default function App() {
 
   const [editorSettings, setEditorSettings] = useState({
     snap: false,
+    snapAngles: false,
     grid: false,
     gridSize: 10,
     snapDistance: 12,
@@ -101,7 +102,7 @@ export default function App() {
       svgId: `new_${kind.toLowerCase()}`,
       x: canvasSize.width / 2, y: canvasSize.height / 2, radius: kind === 'Garage' ? 60 : 40,
       lightStyle: 'glow', targetRoomId: '', glowRx: 150, glowRy: 150, whiteIntensity: 60, tintIntensity: 50,
-      spinSpeed: '2s', spinDirection: 'spin-cw', color: '#94a3b8',
+      spinSpeed: '2s', spinDirection: 'spin-cw', color: ['Door', 'Window'].includes(kind) ? '#94a3b8' : '#000000',
       unlockedColor: '#22c55e', lockedColor: '#000000', 
       onColor: '#22c55e', offColor: '#94a3b8',
       width: 80, depth: 10, angle: 0, flip: false,

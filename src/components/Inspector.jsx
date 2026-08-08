@@ -33,9 +33,10 @@ export function Inspector({
         </div>
 
         <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Grid & Snapping</h3>
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <button onClick={() => setEditorSettings(s => ({ ...s, snap: !s.snap }))} className={`py-2 rounded-lg text-sm font-semibold transition-colors ${editorSettings.snap ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>Snap</button>
-          <button onClick={() => setEditorSettings(s => ({ ...s, grid: !s.grid }))} className={`py-2 rounded-lg text-sm font-semibold transition-colors ${editorSettings.grid ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>Grid</button>
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <button onClick={() => setEditorSettings(s => ({ ...s, snap: !s.snap }))} className={`py-1.5 rounded-lg text-[10px] font-semibold transition-colors ${editorSettings.snap ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>Snap Pos</button>
+          <button onClick={() => setEditorSettings(s => ({ ...s, grid: !s.grid }))} className={`py-1.5 rounded-lg text-[10px] font-semibold transition-colors ${editorSettings.grid ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>Show Grid</button>
+          <button onClick={() => setEditorSettings(s => ({ ...s, snapAngles: !s.snapAngles }))} className={`py-1.5 rounded-lg text-[10px] font-semibold transition-colors ${editorSettings.snapAngles ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>90° Angles</button>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -78,6 +79,16 @@ export function Inspector({
                    
                    <h3 className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 pt-2 border-t border-slate-100 dark:border-slate-800">Room Styling & States</h3>
                    
+                   <div className="mb-4">
+                     <label className="block text-xs text-slate-400 mb-1">Blend Mode (How it mixes with background)</label>
+                     <select value={selectedEntity.blendMode || 'screen'} onChange={(e) => updateEntity(selectedEntity.id, { blendMode: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none">
+                       <option value="normal">Normal</option>
+                       <option value="screen">Screen (Best for Additive Light)</option>
+                       <option value="multiply">Multiply (Best for Darkening/Occlusion)</option>
+                       <option value="overlay">Overlay</option>
+                     </select>
+                   </div>
+
                    <div className="grid grid-cols-2 gap-4">
                      <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-3 bg-slate-50 dark:bg-slate-900/50">
                        <label className="block text-[10px] font-bold text-slate-500 mb-3 uppercase tracking-wide flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-400"></span> ON State (Lit)</label>
@@ -124,8 +135,24 @@ export function Inspector({
                      </div>
                    </div>
 
-                   <div className="mb-4">
-                     <p className="text-[10px] text-slate-500 dark:text-slate-400">Structural elements are purely visual and do not link to Home Assistant entities. They will be added directly to the generated SVG.</p>
+                   <div className="mt-4">
+                     <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Entity ID</label>
+                     {haEntities.length > 0 ? (
+                       <>
+                         <input list="ha-entity-list" type="text" value={selectedEntity.entityId} onChange={(e) => updateEntity(selectedEntity.id, { entityId: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none font-mono" placeholder="Select or type..." />
+                         <datalist id="ha-entity-list">
+                           {haEntities.map(e => <option key={e.id} value={e.id}>{e.name} ({e.id})</option>)}
+                         </datalist>
+                       </>
+                     ) : (
+                       <input type="text" value={selectedEntity.entityId} onChange={(e) => updateEntity(selectedEntity.id, { entityId: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none font-mono" />
+                     )}
+                   </div>
+                   
+                   <div className="mt-4"><label className="block text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">SVG Base ID</label><input type="text" value={selectedEntity.svgId} onChange={(e) => updateEntity(selectedEntity.id, { svgId: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none font-mono" /></div>
+
+                   <div className="mb-4 mt-2">
+                     <p className="text-[10px] text-slate-500 dark:text-slate-400">Link to a binary_sensor (e.g. contact sensor) to automatically animate open and closed states.</p>
                    </div>
 
                    <h3 className="text-xs font-bold text-slate-500 mt-6 mb-2 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800 pb-1">Dimensions & Placement</h3>
@@ -324,20 +351,21 @@ export function Inspector({
                        </div>
                      </div>
                    )}
+
+                   {/* Delete Button */}
+                   <div className="mt-8 pt-4 border-t border-red-100 dark:border-red-900/30">
+                     <button 
+                       onClick={() => {
+                         setEntities(prev => prev.filter(e => e.id !== selectedEntity.id));
+                         setSelectedId(null);
+                       }}
+                       className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg transition-colors text-sm font-semibold"
+                     >
+                       <Icons.Trash /> Delete {selectedEntity.kind === 'Room' ? 'Room' : 'Entity'}
+                     </button>
+                   </div>
                 </>
              )}
-
-             <div className="mt-8 pt-4 border-t border-red-100 dark:border-red-900/30">
-               <button 
-                 onClick={() => {
-                   setEntities(prev => prev.filter(e => e.id !== selectedEntity.id));
-                   setSelectedId(null);
-                 }}
-                 className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg transition-colors text-sm font-semibold"
-               >
-                 <Icons.Trash /> Delete {selectedEntity.kind}
-               </button>
-             </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-slate-500 text-center space-y-3">

@@ -1,8 +1,7 @@
 export const generateYaml = (entities, paths) => {
   let yaml = `type: custom:floorplan-card\nconfig:\n  image: ${paths.svg}\n  stylesheet: ${paths.css}\n  rules:\n`;
   
-  // Filter out structural elements and rooms from the YAML
-  entities.filter(e => !['Room', 'Door', 'Window'].includes(e.kind)).forEach(ent => {
+  entities.filter(e => e.kind !== 'Room').forEach(ent => {
     yaml += `    - name: ${ent.name}\n      entities:\n        - ${ent.entityId}\n`;
     
     if (ent.kind === 'Light' && ent.lightStyle === 'room' && ent.targetRoomId) {
@@ -16,6 +15,8 @@ export const generateYaml = (entities, paths) => {
     else if (ent.kind === 'Lock') yaml += `      state_action:\n        action: call-service\n        service: floorplan.class_set\n        service_data: lock-\${entity.state}\n`;
     else if (ent.kind === 'Garage') yaml += `      state_action:\n        action: call-service\n        service: floorplan.class_set\n        service_data: garage-\${entity.state}\n`;
     else if (ent.kind === 'Outlet') yaml += `      state_action:\n        action: call-service\n        service: floorplan.class_set\n        service_data: outlet-\${entity.state}\n`;
+    else if (ent.kind === 'Door') yaml += `      state_action:\n        action: call-service\n        service: floorplan.class_set\n        service_data: door-\${entity.state}\n`;
+    else if (ent.kind === 'Window') yaml += `      state_action:\n        action: call-service\n        service: floorplan.class_set\n        service_data: window-\${entity.state}\n`;
     else if (ent.kind === 'Thermostat') {
        yaml += `      tap_action:\n        action: more-info\n`;
        yaml += `      state_action:\n        action: call-service\n        service: floorplan.class_set\n        service_data: thermostat-\${entity.state}\n`;
@@ -47,17 +48,21 @@ export const generateSvg = (entities, paths, canvasSize) => {
     svg += `  <!-- Structural Elements -->\n`;
     structural.forEach(ent => {
       if (ent.kind === 'Window') {
-        svg += `  <g id="${ent.svgId}" transform="translate(${ent.x}, ${ent.y}) rotate(${ent.angle})">\n`;
+        svg += `  <g id="${ent.svgId}" transform="translate(${ent.x}, ${ent.y}) rotate(${ent.angle})" style="--window-width: ${ent.width}px;">\n`;
         svg += `    <rect x="${-ent.width/2}" y="${-ent.depth/2}" width="${ent.width}" height="${ent.depth}" fill="#f8fafc" stroke="${ent.color}" stroke-width="2" />\n`;
-        svg += `    <line x1="${-ent.width/2}" y1="0" x2="${ent.width/2}" y2="0" stroke="${ent.color}" stroke-width="1" />\n`;
+        svg += `    <line x1="${-ent.width/2}" y1="0" x2="${ent.width/2}" y2="0" stroke="${ent.color}" stroke-width="1" class="window-glass" />\n`;
+        svg += `    <rect x="${-ent.width/2}" y="${-ent.depth/2}" width="${ent.width}" height="${ent.depth}" fill="transparent" class="entity-hitbox" />\n`;
         svg += `  </g>\n`;
       } else if (ent.kind === 'Door') {
         svg += `  <g id="${ent.svgId}" transform="translate(${ent.x}, ${ent.y}) rotate(${ent.angle})">\n`;
         svg += `    <line x1="${-ent.width/2}" y1="${-ent.depth/2}" x2="${-ent.width/2}" y2="${ent.depth/2}" stroke="${ent.color}" stroke-width="2" />\n`;
         svg += `    <line x1="${ent.width/2}" y1="${-ent.depth/2}" x2="${ent.width/2}" y2="${ent.depth/2}" stroke="${ent.color}" stroke-width="2" />\n`;
         svg += `    <line x1="${-ent.width/2}" y1="0" x2="${ent.width/2}" y2="0" stroke="${ent.color}" stroke-width="1" stroke-dasharray="4 4" />\n`;
-        svg += `    <line x1="${-ent.width/2}" y1="0" x2="${-ent.width/2}" y2="${ent.flip ? ent.width : -ent.width}" stroke="${ent.color}" stroke-width="3" stroke-linecap="round" />\n`;
-        svg += `    <path d="M ${-ent.width/2},${ent.flip ? ent.width : -ent.width} A ${ent.width} ${ent.width} 0 0 ${ent.flip ? 0 : 1} ${ent.width/2},0" fill="none" stroke="${ent.color}" stroke-width="1" />\n`;
+        svg += `    <g class="door-moving-part" style="transform-origin: ${-ent.width/2}px 0px; --door-swing: ${ent.flip ? '-90deg' : '90deg'};">\n`;
+        svg += `      <line x1="${-ent.width/2}" y1="0" x2="${-ent.width/2}" y2="${ent.flip ? ent.width : -ent.width}" stroke="${ent.color}" stroke-width="3" stroke-linecap="round" />\n`;
+        svg += `      <path d="M ${-ent.width/2},${ent.flip ? ent.width : -ent.width} A ${ent.width} ${ent.width} 0 0 ${ent.flip ? 0 : 1} ${ent.width/2},0" fill="none" stroke="${ent.color}" stroke-width="1" class="door-arc" />\n`;
+        svg += `    </g>\n`;
+        svg += `    <rect x="${-ent.width/2}" y="${ent.flip ? 0 : -ent.width}" width="${ent.width}" height="${ent.width}" fill="transparent" class="entity-hitbox" />\n`;
         svg += `  </g>\n`;
       }
     });
@@ -134,8 +139,8 @@ export const generateSvg = (entities, paths, canvasSize) => {
       svg += `      <rect x="22" y="42" width="56" height="48" fill="none" stroke="#003855" stroke-width="2.5" stroke-linejoin="round" />\n`;
       svg += `      <line x1="25.5" y1="58" x2="25.5" y2="90" stroke="#003855" stroke-width="1.5" />\n`;
       svg += `      <line x1="74.5" y1="58" x2="74.5" y2="90" stroke="#003855" stroke-width="1.5" />\n`;
-      svg += `      <polygon points="26,43 74,43 78,48 22,48" fill="white" stroke="#003855" stroke-width="2" stroke-linejoin="round"/>\n`;
-      svg += `      <polygon points="29,44.5 41,44.5 42,47 26,47" fill="#1C5D82" stroke="#003855" stroke-width="1.5" stroke-linejoin="round"/>\n`;
+      svg += `      <polygon points="26,43 74,43 78,48 22,48" fill="white" stroke="#003855" stroke-width="2" strokeLinejoin="round"/>\n`;
+      svg += `      <polygon points="29,44.5 41,44.5 42,47 26,47" fill="#1C5D82" stroke="#003855" stroke-width="1.5" strokeLinejoin="round"/>\n`;
       svg += `      <polygon points="44,44.5 56,44.5 56,47 44,47" fill="#1C5D82" stroke="#003855" stroke-width="1.5" strokeLinejoin="round"/>\n`;
       svg += `      <polygon points="59,44.5 71,44.5 74,47 58,47" fill="#1C5D82" stroke="#003855" stroke-width="1.5" strokeLinejoin="round"/>\n`;
       svg += `      <polygon points="22,48 78,48 81,52 19,52" fill="white" stroke="#003855" stroke-width="2" strokeLinejoin="round"/>\n`;
@@ -165,6 +170,10 @@ export const generateCss = (entities) => {
   }
 
   css += `@keyframes spin-cw {\n  from { transform: rotate(0deg); }\n  to { transform: rotate(360deg); }\n}\n\n@keyframes spin-ccw {\n  from { transform: rotate(360deg); }\n  to { transform: rotate(0deg); }\n}\n\n.fan-on .fan-spin-target {\n  animation-name: var(--spin-dir, spin-cw);\n  animation-duration: var(--spin-speed, 2s);\n  animation-timing-function: linear;\n  animation-iteration-count: infinite;\n}\n\n.lock-svg {\n  transition: color 0.3s ease;\n  color: var(--locked-color, #000000);\n}\n\n.lock-unlocked .lock-svg {\n  color: var(--unlocked-color, #22c55e);\n}\n\n`;
+
+  css += `.door-moving-part {\n  transition: transform 0.6s ease;\n}\n\n.door-arc {\n  transition: opacity 0.4s ease;\n}\n\n.door-off .door-moving-part {\n  transform: rotate(var(--door-swing));\n}\n\n.door-off .door-arc {\n  opacity: 0;\n}\n\n`;
+  
+  css += `.window-glass {\n  transition: transform 0.6s ease, stroke 0.6s ease, stroke-width 0.6s ease;\n}\n\n.window-on .window-glass {\n  transform: translateX(calc(var(--window-width, 40px) * 0.3));\n  stroke: #3b82f6;\n  stroke-width: 3;\n}\n\n`;
 
   css += `.outlet-svg {\n  transition: color 0.3s ease;\n  color: var(--outlet-off-color, #94a3b8);\n}\n\n.outlet-on .outlet-svg {\n  color: var(--outlet-on-color, #22c55e);\n}\n\n`;
   

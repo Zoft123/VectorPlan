@@ -35,10 +35,12 @@ export function Canvas({
     const y = Math.round((e.clientY - rect.top) / zoom);
 
     if (drawingMode) {
+      let isClosing = false;
       if (drawnPoints.length > 2) {
         const firstPoint = drawnPoints[0];
         const dist = Math.hypot(firstPoint.x - x, firstPoint.y - y);
         if (dist < (20 / zoom)) {
+          isClosing = true;
           const id = Date.now();
           setEntities([...entities, {
             id, kind: 'Room', name: 'New Room Area', roomId: `room_${id}`, points: [...drawnPoints], fillColor: '#ffffff', opacity: 40, offFillColor: '#000000', offOpacity: 0, blendMode: 'screen'
@@ -51,7 +53,27 @@ export function Canvas({
           return;
         }
       }
-      setDrawnPoints([...drawnPoints, { x, y }]);
+      
+      let currX = x;
+      let currY = y;
+
+      if (editorSettings.snapAngles && drawnPoints.length > 1 && !isClosing) {
+        const p1 = drawnPoints[drawnPoints.length - 1];
+        const p0 = drawnPoints[drawnPoints.length - 2];
+        const baseAngle = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+        
+        let currentAngle = Math.atan2(y - p1.y, x - p1.x);
+        let dist = Math.hypot(y - p1.y, x - p1.x);
+        let relAngle = currentAngle - baseAngle;
+        relAngle = Math.atan2(Math.sin(relAngle), Math.cos(relAngle));
+        const snapInterval = Math.PI / 2;
+        const snappedRel = Math.round(relAngle / snapInterval) * snapInterval;
+        currentAngle = baseAngle + snappedRel;
+        currX = Math.round(p1.x + Math.cos(currentAngle) * dist);
+        currY = Math.round(p1.y + Math.sin(currentAngle) * dist);
+      }
+      
+      setDrawnPoints([...drawnPoints, { x: currX, y: currY }]);
     } else {
       setSelectedId(null);
     }
@@ -75,7 +97,35 @@ export function Canvas({
     const y = (e.clientY - rect.top) / zoom;
 
     if (drawingMode) {
-      setMousePos({ x, y });
+      let dx = Math.round(x);
+      let dy = Math.round(y);
+      let isClosing = false;
+      
+      if (drawnPoints.length > 2) {
+        const firstPoint = drawnPoints[0];
+        if (Math.hypot(firstPoint.x - dx, firstPoint.y - dy) < (20 / zoom)) {
+          isClosing = true;
+          dx = firstPoint.x;
+          dy = firstPoint.y;
+        }
+      }
+
+      if (editorSettings.snapAngles && drawnPoints.length > 1 && !isClosing) {
+        const p1 = drawnPoints[drawnPoints.length - 1];
+        const p0 = drawnPoints[drawnPoints.length - 2];
+        const baseAngle = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+        
+        let currentAngle = Math.atan2(dy - p1.y, dx - p1.x);
+        let dist = Math.hypot(dy - p1.y, dx - p1.x);
+        let relAngle = currentAngle - baseAngle;
+        relAngle = Math.atan2(Math.sin(relAngle), Math.cos(relAngle));
+        const snapInterval = Math.PI / 2;
+        const snappedRel = Math.round(relAngle / snapInterval) * snapInterval;
+        currentAngle = baseAngle + snappedRel;
+        dx = p1.x + Math.cos(currentAngle) * dist;
+        dy = p1.y + Math.sin(currentAngle) * dist;
+      }
+      setMousePos({ x: dx, y: dy });
     }
 
     if (dragRef.current.isDragging) {
@@ -130,9 +180,27 @@ export function Canvas({
   if (isPanMode || isPanning) cursorClass = isPanning ? 'cursor-grabbing' : 'cursor-grab';
   else if (drawingMode) cursorClass = 'cursor-crosshair';
 
+  let currentAngleText = '';
+  if (drawingMode && drawnPoints.length > 0) {
+    if (drawnPoints.length === 1) {
+      let a = Math.atan2(mousePos.y - drawnPoints[0].y, mousePos.x - drawnPoints[0].x) * (180 / Math.PI);
+      if (a < 0) a += 360;
+      currentAngleText = `${Math.round(a)}°`;
+    } else {
+      const p1 = drawnPoints[drawnPoints.length - 1];
+      const p0 = drawnPoints[drawnPoints.length - 2];
+      const a1 = Math.atan2(p0.y - p1.y, p0.x - p1.x);
+      const a2 = Math.atan2(mousePos.y - p1.y, mousePos.x - p1.x);
+      let diff = Math.abs((a1 - a2) * (180 / Math.PI));
+      if (diff > 180) diff = 360 - diff;
+      currentAngleText = `${Math.round(diff)}°`;
+    }
+  }
+
   return (
     <div className="flex-1 bg-slate-200 dark:bg-slate-950 rounded-xl border border-slate-300 dark:border-slate-800 shadow-inner flex flex-col overflow-hidden relative">
       
+      {/* 1. Un-floated Top Bar */}
       {!isFullscreen && (
         <div className="flex-shrink-0 flex justify-between items-center bg-white/90 dark:bg-slate-900/90 backdrop-blur shadow-sm px-4 py-3 border-b border-slate-200 dark:border-slate-800 z-10">
           <div className="flex items-center gap-3">
@@ -144,6 +212,7 @@ export function Canvas({
         </div>
       )}
 
+      {/* Floating Zoom Controls */}
       <div className="absolute bottom-6 right-6 flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-xl overflow-hidden z-20 pointer-events-auto">
          <button onClick={() => {setIsPanMode(false); setDrawingMode(false);}} className={`p-2.5 transition-colors ${!isPanMode && !drawingMode ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`} title="Cursor Tool"><Icons.MousePointer /></button>
          <button onClick={() => {setIsPanMode(true); setDrawingMode(false);}} className={`p-2.5 border-r border-slate-200 dark:border-slate-700 transition-colors ${isPanMode ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`} title="Pan Tool (or Middle Click)"><Icons.Hand /></button>
@@ -161,14 +230,15 @@ export function Canvas({
         onPointerUp={handlePointerUpCanvas}
         onPointerLeave={handlePointerUpCanvas}
       >
+         {/* 2. Workspace Buffer (Adds 60px padding to all sides) */}
          <div style={{ width: (canvasSize.width * zoom) + 120, height: (canvasSize.height * zoom) + 120, minWidth: '100%', minHeight: '100%', position: 'relative' }}>
            
            <div 
              ref={canvasRef}
              className="absolute shadow-xl touch-none flex-shrink-0 bg-slate-800"
              style={{ 
-               top: 60,
-               left: 60,
+               top: 60, // Shifted down 60px for buffer
+               left: 60, // Shifted right 60px for buffer
                transform: `scale(${zoom})`,
                transformOrigin: 'top left',
                width: canvasSize.width, 
@@ -184,6 +254,7 @@ export function Canvas({
              )}
 
              <svg className="absolute inset-0 pointer-events-none z-0" style={{ width: '100%', height: '100%' }}>
+               {/* ROOMS */}
                {entities.filter(e => e.kind === 'Room').map(room => {
                   const isSelected = selectedId === room.id;
                   const isLit = editorSettings.mode === 'preview' && entities.some(l => l.kind === 'Light' && l.lightStyle === 'room' && l.targetRoomId === room.roomId && l.isOn);
@@ -226,21 +297,28 @@ export function Canvas({
                   )
                })}
 
+               {/* STRUCTURAL ELEMENTS (Doors/Windows) */}
                {entities.filter(e => ['Door', 'Window'].includes(e.kind)).map(ent => {
                  const isSelected = selectedId === ent.id;
                  return (
                    <g 
                      key={ent.id}
                      transform={`translate(${ent.x}, ${ent.y}) rotate(${ent.angle})`}
-                     className={(editorSettings.mode === 'edit' && !isPanMode && !isPanning) ? 'pointer-events-auto cursor-move' : ''}
-                     onPointerDown={(e) => {
-                       if (editorSettings.mode === 'edit') handleEntityPointerDown(e, ent);
-                     }}
+                     className={(editorSettings.mode === 'edit' && !isPanMode && !isPanning) ? 'pointer-events-auto cursor-move' : (editorSettings.mode === 'preview' && ent.entityId && !isPanMode ? 'pointer-events-auto cursor-pointer' : '')}
+                     onPointerDown={(e) => handleEntityPointerDown(e, ent)}
                    >
                      {ent.kind === 'Window' && (
                        <>
                          <rect x={-ent.width/2} y={-ent.depth/2} width={ent.width} height={ent.depth} fill="#f8fafc" stroke={ent.color} strokeWidth="2" />
-                         <line x1={-ent.width/2} y1={0} x2={ent.width/2} y2={0} stroke={ent.color} strokeWidth="1" />
+                         <line 
+                           x1={-ent.width/2} y1={0} x2={ent.width/2} y2={0} 
+                           stroke={(editorSettings.mode === 'preview' && ent.isOn) ? "#3b82f6" : ent.color} 
+                           strokeWidth={(editorSettings.mode === 'preview' && ent.isOn) ? "3" : "1"} 
+                           style={{
+                             transform: (editorSettings.mode === 'preview' && ent.isOn) ? `translateX(${ent.width * 0.3}px)` : 'translateX(0px)',
+                             transition: 'transform 0.5s ease, stroke 0.5s ease, stroke-width 0.5s ease'
+                           }}
+                         />
                        </>
                      )}
                      
@@ -249,8 +327,14 @@ export function Canvas({
                          <line x1={-ent.width/2} y1={-ent.depth/2} x2={-ent.width/2} y2={ent.depth/2} stroke={ent.color} strokeWidth="2" />
                          <line x1={ent.width/2} y1={-ent.depth/2} x2={ent.width/2} y2={ent.depth/2} stroke={ent.color} strokeWidth="2" />
                          <line x1={-ent.width/2} y1={0} x2={ent.width/2} y2={0} stroke={ent.color} strokeWidth="1" strokeDasharray="4 4" />
-                         <line x1={-ent.width/2} y1={0} x2={-ent.width/2} y2={ent.flip ? ent.width : -ent.width} stroke={ent.color} strokeWidth="3" strokeLinecap="round" />
-                         <path d={`M ${-ent.width/2},${ent.flip ? ent.width : -ent.width} A ${ent.width} ${ent.width} 0 0 ${ent.flip ? 0 : 1} ${ent.width/2},0`} fill="none" stroke={ent.color} strokeWidth="1" />
+                         <g style={{ 
+                           transformOrigin: `${-ent.width/2}px 0px`, 
+                           transform: (editorSettings.mode === 'preview' && !ent.isOn) ? `rotate(${ent.flip ? -90 : 90}deg)` : 'rotate(0deg)',
+                           transition: 'transform 0.5s ease'
+                         }}>
+                           <line x1={-ent.width/2} y1={0} x2={-ent.width/2} y2={ent.flip ? ent.width : -ent.width} stroke={ent.color} strokeWidth="3" strokeLinecap="round" />
+                           <path d={`M ${-ent.width/2},${ent.flip ? ent.width : -ent.width} A ${ent.width} ${ent.width} 0 0 ${ent.flip ? 0 : 1} ${ent.width/2},0`} fill="none" stroke={ent.color} strokeWidth="1" style={{ opacity: (editorSettings.mode === 'preview' && !ent.isOn) ? 0 : 1, transition: 'opacity 0.3s ease' }} />
+                         </g>
                        </>
                      )}
                      
@@ -278,6 +362,7 @@ export function Canvas({
                  );
                })}
 
+               {/* DRAWING MODE OVERLAYS */}
                {drawingMode && drawnPoints.length > 0 && (
                  <>
                     <polygon points={drawnPoints.map(p => `${p.x},${p.y}`).join(' ')} fill="rgba(59, 130, 246, 0.2)" stroke="transparent" />
@@ -286,10 +371,21 @@ export function Canvas({
                     {drawnPoints.map((p, i) => (
                        <circle key={i} cx={p.x} cy={p.y} r={5/zoom} fill={i === 0 ? "#ef4444" : "#3b82f6"} stroke="#fff" strokeWidth={1/zoom} className="transition-all" />
                     ))}
+                    <text 
+                      x={mousePos.x + 15/zoom} 
+                      y={mousePos.y - 15/zoom} 
+                      fill="#2563eb" 
+                      fontSize={14/zoom} 
+                      fontWeight="bold" 
+                      style={{ pointerEvents: 'none', textShadow: '1px 1px 0px #fff, -1px -1px 0px #fff, 1px -1px 0px #fff, -1px 1px 0px #fff' }}
+                    >
+                      {currentAngleText}
+                    </text>
                  </>
                )}
              </svg>
 
+             {/* STANDARD ENTITIES */}
              {entities.filter(e => !['Room', 'Door', 'Window'].includes(e.kind)).map(entity => {
                const EntityIconCmp = Icons[entity.kind] || Icons.Sensor;
                return (
