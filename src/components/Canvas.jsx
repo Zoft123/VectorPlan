@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Icons } from '../utils/icons';
 
 export function Canvas({
@@ -14,6 +14,10 @@ export function Canvas({
   const scrollContainerRef = useRef(null);
   const dragRef = useRef({ isDragging: false, id: null, offsetX: 0, offsetY: 0 });
   const panRef = useRef({ startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0 });
+  
+  // Track rotation state
+  const [isRotating, setIsRotating] = useState(false);
+  const rotateRef = useRef({ isRotating: false, id: null, startAngle: 0, startEntityAngle: 0 });
 
   const handlePointerDownCanvas = (e) => {
     if (e.button === 1 || isPanMode) {
@@ -96,6 +100,32 @@ export function Canvas({
     const x = (e.clientX - rect.left) / zoom;
     const y = (e.clientY - rect.top) / zoom;
 
+    // Handle Rotation
+    if (rotateRef.current.isRotating) {
+      const rotEnt = entities.find(ent => ent.id === rotateRef.current.id);
+      if (rotEnt) {
+        const angleToCenter = Math.atan2(y - rotEnt.y, x - rotEnt.x);
+        let angleDiff = angleToCenter - rotateRef.current.startAngle;
+        // Normalize angle difference to avoid jumps
+        angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+        
+        let newAngle = rotateRef.current.startEntityAngle + (angleDiff * (180 / Math.PI));
+        
+        // Snap to 15 degree increments if angle snapping is on
+        if (editorSettings.snapAngles) {
+            newAngle = Math.round(newAngle / 15) * 15;
+        } else {
+            newAngle = Math.round(newAngle);
+        }
+        newAngle = (newAngle % 360 + 360) % 360;
+
+        setEntities(prev => prev.map(ent => 
+          ent.id === rotEnt.id ? { ...ent, angle: newAngle } : ent
+        ));
+      }
+      return;
+    }
+
     if (drawingMode) {
       let dx = Math.round(x);
       let dy = Math.round(y);
@@ -150,6 +180,8 @@ export function Canvas({
   const handlePointerUpCanvas = () => {
     dragRef.current.isDragging = false;
     setIsPanning(false);
+    if (isRotating) setIsRotating(false);
+    rotateRef.current.isRotating = false;
   };
 
   const handleEntityPointerDown = (e, entity) => {
@@ -176,9 +208,26 @@ export function Canvas({
     };
   };
 
+  const handleRotatePointerDown = (e, entity) => {
+    e.stopPropagation();
+    if(!canvasRef.current) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / zoom;
+    const y = (e.clientY - rect.top) / zoom;
+    
+    setIsRotating(true);
+    rotateRef.current = {
+      isRotating: true,
+      id: entity.id,
+      startAngle: Math.atan2(y - entity.y, x - entity.x),
+      startEntityAngle: entity.angle || 0
+    };
+  };
+
   let cursorClass = '';
   if (isPanMode || isPanning) cursorClass = isPanning ? 'cursor-grabbing' : 'cursor-grab';
   else if (drawingMode) cursorClass = 'cursor-crosshair';
+  else if (isRotating) cursorClass = 'cursor-grabbing';
 
   let currentAngleText = '';
   if (drawingMode && drawnPoints.length > 0) {
@@ -200,7 +249,6 @@ export function Canvas({
   return (
     <div className="flex-1 bg-slate-200 dark:bg-slate-950 rounded-xl border border-slate-300 dark:border-slate-800 shadow-inner flex flex-col overflow-hidden relative">
       
-      {/* 1. Un-floated Top Bar */}
       {!isFullscreen && (
         <div className="flex-shrink-0 flex justify-between items-center bg-white/90 dark:bg-slate-900/90 backdrop-blur shadow-sm px-4 py-3 border-b border-slate-200 dark:border-slate-800 z-10">
           <div className="flex items-center gap-3">
@@ -212,7 +260,6 @@ export function Canvas({
         </div>
       )}
 
-      {/* Floating Zoom Controls */}
       <div className="absolute bottom-6 right-6 flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-xl overflow-hidden z-20 pointer-events-auto">
          <button onClick={() => {setIsPanMode(false); setDrawingMode(false);}} className={`p-2.5 transition-colors ${!isPanMode && !drawingMode ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`} title="Cursor Tool"><Icons.MousePointer /></button>
          <button onClick={() => {setIsPanMode(true); setDrawingMode(false);}} className={`p-2.5 border-r border-slate-200 dark:border-slate-700 transition-colors ${isPanMode ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`} title="Pan Tool (or Middle Click)"><Icons.Hand /></button>
@@ -230,15 +277,14 @@ export function Canvas({
         onPointerUp={handlePointerUpCanvas}
         onPointerLeave={handlePointerUpCanvas}
       >
-         {/* 2. Workspace Buffer (Adds 60px padding to all sides) */}
          <div style={{ width: (canvasSize.width * zoom) + 120, height: (canvasSize.height * zoom) + 120, minWidth: '100%', minHeight: '100%', position: 'relative' }}>
            
            <div 
              ref={canvasRef}
              className="absolute shadow-xl touch-none flex-shrink-0 bg-slate-800"
              style={{ 
-               top: 60, // Shifted down 60px for buffer
-               left: 60, // Shifted right 60px for buffer
+               top: 60,
+               left: 60,
                transform: `scale(${zoom})`,
                transformOrigin: 'top left',
                width: canvasSize.width, 
@@ -249,11 +295,19 @@ export function Canvas({
                backgroundRepeat: 'no-repeat',
              }}
            >
-             {editorSettings.grid && (
-               <div className="absolute inset-0 pointer-events-none opacity-20" style={{ backgroundImage: `linear-gradient(to right, #888 1px, transparent 1px), linear-gradient(to bottom, #888 1px, transparent 1px)`, backgroundSize: `${editorSettings.gridSize}px ${editorSettings.gridSize}px` }}></div>
-             )}
-
              <svg className="absolute inset-0 pointer-events-none z-0" style={{ width: '100%', height: '100%' }}>
+               {/* Native SVG pattern for perfect grid rendering */}
+               {editorSettings.grid && (
+                 <>
+                   <defs>
+                     <pattern id="canvas-grid" width={editorSettings.gridSize} height={editorSettings.gridSize} patternUnits="userSpaceOnUse">
+                       <path d={`M ${editorSettings.gridSize} 0 L 0 0 0 ${editorSettings.gridSize}`} fill="none" stroke="rgba(148, 163, 184, 0.4)" strokeWidth="0.5"/>
+                     </pattern>
+                   </defs>
+                   <rect width="100%" height="100%" fill="url(#canvas-grid)" />
+                 </>
+               )}
+
                {/* ROOMS */}
                {entities.filter(e => e.kind === 'Room').map(room => {
                   const isSelected = selectedId === room.id;
@@ -305,39 +359,47 @@ export function Canvas({
                      key={ent.id}
                      transform={`translate(${ent.x}, ${ent.y}) rotate(${ent.angle})`}
                      className={(editorSettings.mode === 'edit' && !isPanMode && !isPanning) ? 'pointer-events-auto cursor-move' : (editorSettings.mode === 'preview' && ent.entityId && !isPanMode ? 'pointer-events-auto cursor-pointer' : '')}
-                     onPointerDown={(e) => handleEntityPointerDown(e, ent)}
+                     onPointerDown={(e) => {
+                       if (!isRotating) handleEntityPointerDown(e, ent);
+                     }}
                    >
                      {ent.kind === 'Window' && (
                        <>
-                         <rect x={-ent.width/2} y={-ent.depth/2} width={ent.width} height={ent.depth} fill="#f8fafc" stroke={ent.color} strokeWidth="2" />
-                         <line 
-                           x1={-ent.width/2} y1={0} x2={ent.width/2} y2={0} 
-                           stroke={(editorSettings.mode === 'preview' && ent.isOn) ? "#3b82f6" : ent.color} 
-                           strokeWidth={(editorSettings.mode === 'preview' && ent.isOn) ? "3" : "1"} 
-                           style={{
-                             transform: (editorSettings.mode === 'preview' && ent.isOn) ? `translateX(${ent.width * 0.3}px)` : 'translateX(0px)',
-                             transition: 'transform 0.5s ease, stroke 0.5s ease, stroke-width 0.5s ease'
-                           }}
-                         />
+                         {/* Window Sill / Background */}
+                         <rect x={-ent.width/2} y={-ent.depth/2} width={ent.width} height={ent.depth} fill="rgba(56, 189, 248, 0.15)" stroke={ent.color} strokeWidth="2" />
+                         {/* Double Pane Glass Lines */}
+                         <g style={{ 
+                             transform: (editorSettings.mode === 'preview' && ent.isOn) ? `translateX(${ent.width * 0.45}px)` : 'translateX(0px)', 
+                             transition: 'transform 0.5s ease' 
+                         }}>
+                           <line x1={-ent.width/2} y1="-1.5" x2={ent.width/2} y2="-1.5" stroke="#38bdf8" strokeWidth="2" />
+                           <line x1={-ent.width/2} y1="1.5" x2={ent.width/2} y2="1.5" stroke="#38bdf8" strokeWidth="2" />
+                         </g>
                        </>
                      )}
                      
                      {ent.kind === 'Door' && (
                        <>
+                         {/* Wall Caps */}
                          <line x1={-ent.width/2} y1={-ent.depth/2} x2={-ent.width/2} y2={ent.depth/2} stroke={ent.color} strokeWidth="2" />
                          <line x1={ent.width/2} y1={-ent.depth/2} x2={ent.width/2} y2={ent.depth/2} stroke={ent.color} strokeWidth="2" />
-                         <line x1={-ent.width/2} y1={0} x2={ent.width/2} y2={0} stroke={ent.color} strokeWidth="1" strokeDasharray="4 4" />
+                         
+                         {/* Subtle Threshold */}
+                         <line x1={-ent.width/2} y1={0} x2={ent.width/2} y2={0} stroke={ent.color} strokeWidth="1" strokeDasharray="2 4" opacity="0.5" />
+                         
+                         {/* Moving Door Slab & Arc */}
                          <g style={{ 
                            transformOrigin: `${-ent.width/2}px 0px`, 
                            transform: (editorSettings.mode === 'preview' && !ent.isOn) ? `rotate(${ent.flip ? -90 : 90}deg)` : 'rotate(0deg)',
                            transition: 'transform 0.5s ease'
                          }}>
-                           <line x1={-ent.width/2} y1={0} x2={-ent.width/2} y2={ent.flip ? ent.width : -ent.width} stroke={ent.color} strokeWidth="3" strokeLinecap="round" />
-                           <path d={`M ${-ent.width/2},${ent.flip ? ent.width : -ent.width} A ${ent.width} ${ent.width} 0 0 ${ent.flip ? 0 : 1} ${ent.width/2},0`} fill="none" stroke={ent.color} strokeWidth="1" style={{ opacity: (editorSettings.mode === 'preview' && !ent.isOn) ? 0 : 1, transition: 'opacity 0.3s ease' }} />
+                           <line x1={-ent.width/2} y1="0" x2={-ent.width/2} y2={ent.flip ? ent.width : -ent.width} stroke="#d97706" strokeWidth="4" strokeLinecap="round" />
+                           <path d={`M ${-ent.width/2},${ent.flip ? ent.width : -ent.width} A ${ent.width} ${ent.width} 0 0 ${ent.flip ? 0 : 1} ${ent.width/2},0`} fill="none" stroke={ent.color} strokeWidth="1" strokeDasharray="4 4" opacity="0.6" style={{ opacity: (editorSettings.mode === 'preview' && !ent.isOn) ? 0 : 0.6, transition: 'opacity 0.3s ease' }} />
                          </g>
                        </>
                      )}
                      
+                     {/* Transparent Hitbox */}
                      <rect 
                        x={-ent.width/2} 
                        y={ent.kind === 'Door' ? (ent.flip ? 0 : -ent.width) : -ent.depth/2} 
@@ -347,16 +409,26 @@ export function Canvas({
                      />
 
                      {isSelected && editorSettings.mode === 'edit' && (
-                       <rect 
-                         x={-ent.width/2 - 5} 
-                         y={ent.kind === 'Door' ? (ent.flip ? -5 : -ent.width - 5) : -ent.depth/2 - 5} 
-                         width={ent.width + 10} 
-                         height={ent.kind === 'Door' ? ent.width + 10 : ent.depth + 10} 
-                         fill="rgba(59, 130, 246, 0.1)" 
-                         stroke="#3b82f6" 
-                         strokeWidth="1" 
-                         strokeDasharray="3 3" 
-                       />
+                       <>
+                         <rect 
+                           x={-ent.width/2 - 5} 
+                           y={ent.kind === 'Door' ? (ent.flip ? -5 : -ent.width - 5) : -ent.depth/2 - 5} 
+                           width={ent.width + 10} 
+                           height={ent.kind === 'Door' ? ent.width + 10 : ent.depth + 10} 
+                           fill="rgba(59, 130, 246, 0.1)" 
+                           stroke="#3b82f6" 
+                           strokeWidth="1" 
+                           strokeDasharray="3 3" 
+                           pointerEvents="none"
+                         />
+                         
+                         {/* Rotation Handle */}
+                         <g className="cursor-grab hover:opacity-80 transition-opacity" onPointerDown={(e) => handleRotatePointerDown(e, ent)}>
+                           <line x1={ent.width/2 + 5} y1="0" x2={ent.width/2 + 25} y2="0" stroke="#3b82f6" strokeWidth="1" strokeDasharray="2 2" />
+                           <circle cx={ent.width/2 + 25} cy="0" r="6" fill="#fff" stroke="#3b82f6" strokeWidth="2" />
+                           <circle cx={ent.width/2 + 25} cy="0" r="2" fill="#3b82f6" pointerEvents="none" />
+                         </g>
+                       </>
                      )}
                    </g>
                  );
