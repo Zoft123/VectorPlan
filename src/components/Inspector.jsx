@@ -39,14 +39,18 @@ export function Inspector({
           <button onClick={() => setEditorSettings(s => ({ ...s, snapAngles: !s.snapAngles }))} className={`py-1.5 rounded-lg text-[10px] font-semibold transition-colors ${editorSettings.snapAngles ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>90° Angles</button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-2">
           <div>
-            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">GRID SIZE</label>
-            <input type="number" value={editorSettings.gridSize} onChange={e => setEditorSettings(s => ({ ...s, gridSize: parseInt(e.target.value) || 1 }))} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none" />
+            <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Size</label>
+            <input type="number" value={editorSettings.gridSize} onChange={e => setEditorSettings(s => ({ ...s, gridSize: parseInt(e.target.value) || 1 }))} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-1.5 text-xs text-center focus:ring-2 outline-none font-mono" />
           </div>
           <div>
-            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">SNAP DISTANCE</label>
-            <input type="number" value={editorSettings.snapDistance} onChange={e => setEditorSettings(s => ({ ...s, snapDistance: parseInt(e.target.value) || 1 }))} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none" />
+            <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Color</label>
+            <input type="color" value={editorSettings.gridColor || '#94a3b8'} onChange={e => setEditorSettings(s => ({ ...s, gridColor: e.target.value }))} className="w-full h-[30px] rounded cursor-pointer border-0 p-0" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Snap</label>
+            <input type="number" value={editorSettings.snapDistance} onChange={e => setEditorSettings(s => ({ ...s, snapDistance: parseInt(e.target.value) || 1 }))} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-1.5 text-xs text-center focus:ring-2 outline-none font-mono" />
           </div>
         </div>
       </div>

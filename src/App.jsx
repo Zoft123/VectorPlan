@@ -38,6 +38,7 @@ export default function App() {
     snapAngles: false,
     grid: false,
     gridSize: 10,
+    gridColor: '#94a3b8',
     snapDistance: 12,
     mode: 'edit'
   });
@@ -50,8 +51,6 @@ export default function App() {
 
   const dropdownRef = useRef(null);
   
-  // Keep a ref of the latest state for keyboard shortcuts to avoid stale closures
-  // without having to re-bind the event listener on every drag tick.
   const stateRef = useRef({ selectedId, entities });
   useEffect(() => {
     stateRef.current = { selectedId, entities };
@@ -73,7 +72,6 @@ export default function App() {
     };
     
     const handleKeyDown = (e) => {
-      // Don't trigger shortcuts if typing in an input field
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
 
       const { selectedId, entities } = stateRef.current;
@@ -94,7 +92,6 @@ export default function App() {
         setZoom(z => Math.max(z - 0.25, 0.25));
       }
 
-      // Pro Shortcuts: Delete
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedId) {
           setEntities(prev => prev.filter(ent => ent.id !== selectedId));
@@ -102,9 +99,8 @@ export default function App() {
         }
       }
 
-      // Pro Shortcuts: Duplicate (Ctrl+D or Cmd+D)
       if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-        e.preventDefault(); // Prevent browser bookmark dialog
+        e.preventDefault();
         if (selectedId) {
           const original = entities.find(ent => ent.id === selectedId);
           if (original) {
@@ -112,7 +108,7 @@ export default function App() {
             const newEnt = {
               ...original,
               id: newId,
-              x: original.x + 20, // Offset so it doesn't hide the original
+              x: original.x + 20,
               y: original.y + 20,
               name: `${original.name} (Copy)`,
               roomId: original.kind === 'Room' ? `${original.roomId}_copy` : undefined,

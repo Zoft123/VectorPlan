@@ -349,7 +349,7 @@ export function Canvas({
                  <>
                    <defs>
                      <pattern id="canvas-grid" width={editorSettings.gridSize} height={editorSettings.gridSize} patternUnits="userSpaceOnUse">
-                       <path d={`M ${editorSettings.gridSize} 0 L 0 0 0 ${editorSettings.gridSize}`} fill="none" stroke="rgba(148, 163, 184, 0.4)" strokeWidth="0.5"/>
+                       <path d={`M ${editorSettings.gridSize} 0 L 0 0 0 ${editorSettings.gridSize}`} fill="none" stroke={editorSettings.gridColor || '#94a3b8'} strokeWidth="0.5" opacity="0.4"/>
                      </pattern>
                    </defs>
                    <rect width="100%" height="100%" fill="url(#canvas-grid)" />
@@ -587,43 +587,43 @@ export function Canvas({
                   )}
 
                   {entity.kind === 'Garage' && (
-                    <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center drop-shadow-md">
-                      <div className="w-full h-full flex items-center justify-center transition-all duration-300">
-                        {(!entity.isOn || editorSettings.mode === 'edit') ? (
-                          <svg viewBox="0 0 100 100" width="100%" height="100%">
-                            <path d="M 10 90 L 10 35 L 50 15 L 90 35 L 90 90 Z" fill="none" stroke="#003855" strokeWidth="3" strokeLinejoin="round" />
-                            <rect x="22" y="42" width="56" height="48" fill="none" stroke="#003855" strokeWidth="2.5" strokeLinejoin="round" />
-                            <line x1="22" y1="54" x2="78" y2="54" stroke="#003855" strokeWidth="2" />
-                            <line x1="22" y1="66" x2="78" y2="66" stroke="#003855" strokeWidth="2" />
-                            <line x1="22" y1="78" x2="78" y2="78" stroke="#003855" strokeWidth="2" />
-                            <rect x="27" y="45" width="12" height="6" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round" />
-                            <rect x="44" y="45" width="12" height="6" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round" />
-                            <rect x="61" y="45" width="12" height="6" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round" />
-                          </svg>
-                        ) : (
-                          <svg viewBox="0 0 100 100" width="100%" height="100%">
-                            <path d="M 10 90 L 10 35 L 50 15 L 90 35 L 90 90 Z" fill="white" stroke="#003855" strokeWidth="3" strokeLinejoin="round" />
-                            <rect x="28" y="45" width="44" height="35" fill="#0A2D42" stroke="#003855" strokeWidth="2" />
-                            <line x1="22" y1="90" x2="28" y2="80" stroke="#003855" strokeWidth="2.5" strokeLinecap="round"/>
-                            <line x1="78" y1="90" x2="72" y2="80" stroke="#003855" strokeWidth="2.5" strokeLinecap="round"/>
-                            <line x1="28" y1="80" x2="72" y2="80" stroke="#003855" strokeWidth="2.5" strokeLinecap="round"/>
-                            <line x1="28" y1="42" x2="28" y2="80" stroke="#003855" strokeWidth="2.5"/>
-                            <line x1="72" y1="42" x2="72" y2="80" stroke="#003855" strokeWidth="2.5"/>
-                            <rect x="22" y="42" width="56" height="48" fill="none" stroke="#003855" strokeWidth="2.5" strokeLinejoin="round" />
-                            <line x1="25.5" y1="58" x2="25.5" y2="90" stroke="#003855" strokeWidth="1.5" />
-                            <line x1="74.5" y1="58" x2="74.5" y2="90" stroke="#003855" strokeWidth="1.5" />
-                            <polygon points="26,43 74,43 78,48 22,48" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
-                            <polygon points="29,44.5 41,44.5 42,47 26,47" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round"/>
-                            <polygon points="44,44.5 56,44.5 56,47 44,47" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round"/>
-                            <polygon points="59,44.5 71,44.5 74,47 58,47" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round"/>
-                            <polygon points="22,48 78,48 81,52 19,52" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
-                            <polygon points="19,52 81,52 83,56 17,56" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
-                            <polygon points="17,56 83,56 83,60 17,60" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                     <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center drop-shadow-md">
+                       <div className="w-full h-full flex items-center justify-center transition-all duration-300">
+                         {(!entity.isOn || editorSettings.mode === 'edit') ? (
+                           <svg viewBox="0 0 100 100" width="100%" height="100%">
+                             <path d="M 10 90 L 10 35 L 50 15 L 90 35 L 90 90 Z" fill="none" stroke="#003855" strokeWidth="3" strokeLinejoin="round" />
+                             <rect x="22" y="42" width="56" height="48" fill="none" stroke="#003855" strokeWidth="2.5" strokeLinejoin="round" />
+                             <line x1="22" y1="54" x2="78" y2="54" stroke="#003855" strokeWidth="2" />
+                             <line x1="22" y1="66" x2="78" y2="66" stroke="#003855" strokeWidth="2" />
+                             <line x1="22" y1="78" x2="78" y2="78" stroke="#003855" strokeWidth="2" />
+                             <rect x="27" y="45" width="12" height="6" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round" />
+                             <rect x="44" y="45" width="12" height="6" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round" />
+                             <rect x="61" y="45" width="12" height="6" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round" />
+                           </svg>
+                         ) : (
+                           <svg viewBox="0 0 100 100" width="100%" height="100%">
+                             <path d="M 10 90 L 10 35 L 50 15 L 90 35 L 90 90 Z" fill="white" stroke="#003855" strokeWidth="3" strokeLinejoin="round" />
+                             <rect x="28" y="45" width="44" height="35" fill="#0A2D42" stroke="#003855" strokeWidth="2" />
+                             <line x1="22" y1="90" x2="28" y2="80" stroke="#003855" strokeWidth="2.5" strokeLinecap="round"/>
+                             <line x1="78" y1="90" x2="72" y2="80" stroke="#003855" strokeWidth="2.5" strokeLinecap="round"/>
+                             <line x1="28" y1="80" x2="72" y2="80" stroke="#003855" strokeWidth="2.5" strokeLinecap="round"/>
+                             <line x1="28" y1="42" x2="28" y2="80" stroke="#003855" strokeWidth="2.5"/>
+                             <line x1="72" y1="42" x2="72" y2="80" stroke="#003855" strokeWidth="2.5"/>
+                             <rect x="22" y="42" width="56" height="48" fill="none" stroke="#003855" strokeWidth="2.5" strokeLinejoin="round" />
+                             <line x1="25.5" y1="58" x2="25.5" y2="90" stroke="#003855" strokeWidth="1.5" />
+                             <line x1="74.5" y1="58" x2="74.5" y2="90" stroke="#003855" strokeWidth="1.5" />
+                             <polygon points="26,43 74,43 78,48 22,48" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
+                             <polygon points="29,44.5 41,44.5 42,47 26,47" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round"/>
+                             <polygon points="44,44.5 56,44.5 56,47 44,47" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round"/>
+                             <polygon points="59,44.5 71,44.5 74,47 58,47" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round"/>
+                             <polygon points="22,48 78,48 81,52 19,52" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
+                             <polygon points="19,52 81,52 83,56 17,56" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
+                             <polygon points="17,56 83,56 83,60 17,60" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
+                           </svg>
+                         )}
+                       </div>
+                     </div>
+                   )}
                 </div>
              )})}
            </div>
