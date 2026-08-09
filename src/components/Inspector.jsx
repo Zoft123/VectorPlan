@@ -4,7 +4,7 @@ import { Icons } from '../utils/icons';
 export function Inspector({
   entities, setEntities, updateEntity, selectedId, haEntities,
   editorSettings, setEditorSettings, paths, setPaths,
-  handleImageUpload, setDrawingMode, setSelectedId
+  handleImageUpload, setDrawingMode, setSelectedId, duplicateEntity
 }) {
   const selectedEntity = entities.find(e => e.id === selectedId);
   const roomsList = entities.filter(e => e.kind === 'Room');
@@ -350,16 +350,22 @@ export function Inspector({
                      </div>
                    )}
 
-                   {/* Delete Button */}
-                   <div className="mt-8 pt-4 border-t border-red-100 dark:border-red-900/30">
+                   {/* Action Buttons */}
+                   <div className="mt-8 pt-4 border-t border-red-100 dark:border-red-900/30 flex gap-3">
+                     <button 
+                       onClick={() => duplicateEntity(selectedEntity.id)}
+                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg transition-colors text-sm font-semibold"
+                     >
+                       <Icons.Copy /> Duplicate
+                     </button>
                      <button 
                        onClick={() => {
                          setEntities(prev => prev.filter(e => e.id !== selectedEntity.id));
                          setSelectedId(null);
                        }}
-                       className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg transition-colors text-sm font-semibold"
+                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg transition-colors text-sm font-semibold"
                      >
-                       <Icons.Trash /> Delete {selectedEntity.kind === 'Room' ? 'Room' : 'Entity'}
+                       <Icons.Trash /> Delete
                      </button>
                    </div>
                 </>

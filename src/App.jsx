@@ -49,6 +49,13 @@ export default function App() {
   });
 
   const dropdownRef = useRef(null);
+  
+  // Keep a ref of the latest state for keyboard shortcuts to avoid stale closures
+  // without having to re-bind the event listener on every drag tick.
+  const stateRef = useRef({ selectedId, entities });
+  useEffect(() => {
+    stateRef.current = { selectedId, entities };
+  }, [selectedId, entities]);
 
   useEffect(() => {
     if (isDark) {
@@ -66,12 +73,16 @@ export default function App() {
     };
     
     const handleKeyDown = (e) => {
+      // Don't trigger shortcuts if typing in an input field
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+
+      const { selectedId, entities } = stateRef.current;
 
       if (e.key === 'Escape') {
         if (drawingMode) { setDrawingMode(false); setDrawnPoints([]); }
         if (isFullscreen) setIsFullscreen(false);
         if (roomNamePrompt) setRoomNamePrompt(null);
+        setSelectedId(null);
       }
       
       if (e.key === '=' || e.key === '+') {
@@ -81,6 +92,37 @@ export default function App() {
       if (e.key === '-' || e.key === '_') {
         e.preventDefault();
         setZoom(z => Math.max(z - 0.25, 0.25));
+      }
+
+      // Pro Shortcuts: Delete
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedId) {
+          setEntities(prev => prev.filter(ent => ent.id !== selectedId));
+          setSelectedId(null);
+        }
+      }
+
+      // Pro Shortcuts: Duplicate (Ctrl+D or Cmd+D)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault(); // Prevent browser bookmark dialog
+        if (selectedId) {
+          const original = entities.find(ent => ent.id === selectedId);
+          if (original) {
+            const newId = Date.now();
+            const newEnt = {
+              ...original,
+              id: newId,
+              x: original.x + 20, // Offset so it doesn't hide the original
+              y: original.y + 20,
+              name: `${original.name} (Copy)`,
+              roomId: original.kind === 'Room' ? `${original.roomId}_copy` : undefined,
+              svgId: original.svgId ? `${original.svgId}_copy` : undefined,
+              points: original.points ? original.points.map(p => ({ x: p.x + 20, y: p.y + 20 })) : undefined
+            };
+            setEntities(prev => [...prev, newEnt]);
+            setSelectedId(newId);
+          }
+        }
       }
     };
 
@@ -111,6 +153,24 @@ export default function App() {
     setEntities([...entities, newEnt]);
     setSelectedId(id);
     setShowAddMenu(false);
+  };
+
+  const duplicateEntity = (idToCopy) => {
+    const original = entities.find(e => e.id === idToCopy);
+    if (!original) return;
+    const newId = Date.now();
+    const newEnt = {
+      ...original,
+      id: newId,
+      x: original.x + 20,
+      y: original.y + 20,
+      name: `${original.name} (Copy)`,
+      roomId: original.kind === 'Room' ? `${original.roomId}_copy` : undefined,
+      svgId: original.svgId ? `${original.svgId}_copy` : undefined,
+      points: original.points ? original.points.map(p => ({ x: p.x + 20, y: p.y + 20 })) : undefined
+    };
+    setEntities(prev => [...prev, newEnt]);
+    setSelectedId(newId);
   };
 
   const handleImageUpload = (e) => {
@@ -152,6 +212,7 @@ export default function App() {
               haEntities={haEntities} editorSettings={editorSettings}
               setEditorSettings={setEditorSettings} paths={paths} setPaths={setPaths}
               handleImageUpload={handleImageUpload} setDrawingMode={setDrawingMode}
+              duplicateEntity={duplicateEntity}
             />
           )}
 
