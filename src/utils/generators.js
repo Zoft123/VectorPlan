@@ -51,9 +51,9 @@ export const generateSvg = (entities, paths, canvasSize) => {
       if (ent.kind === 'Window') {
         svg += `  <g id="${ent.svgId}" transform="translate(${ent.x}, ${ent.y}) rotate(${ent.angle})" style="--window-width: ${ent.width}px;">\n`;
         svg += `    <rect x="${-ent.width/2}" y="${-ent.depth/2}" width="${ent.width}" height="${ent.depth}" fill="rgba(56, 189, 248, 0.15)" stroke="${ent.color}" stroke-width="2" />\n`;
+        svg += `    <line x1="${-ent.width/2}" y1="-1.5" x2="0" y2="-1.5" stroke="#38bdf8" stroke-width="2" />\n`;
         svg += `    <g class="window-glass">\n`;
-        svg += `      <line x1="${-ent.width/2}" y1="-1.5" x2="${ent.width/2}" y2="-1.5" stroke="#38bdf8" stroke-width="2" />\n`;
-        svg += `      <line x1="${-ent.width/2}" y1="1.5" x2="${ent.width/2}" y2="1.5" stroke="#38bdf8" stroke-width="2" />\n`;
+        svg += `      <line x1="0" y1="1.5" x2="${ent.width/2}" y2="1.5" stroke="#38bdf8" stroke-width="2" />\n`;
         svg += `    </g>\n`;
         svg += `    <rect x="${-ent.width/2}" y="${-ent.depth/2}" width="${ent.width}" height="${ent.depth}" fill="transparent" class="entity-hitbox" />\n`;
         svg += `  </g>\n`;
@@ -177,7 +177,7 @@ export const generateCss = (entities) => {
 
   css += `.door-moving-part {\n  transition: transform 0.6s ease;\n}\n\n.door-arc {\n  transition: opacity 0.4s ease;\n  opacity: 0.6;\n}\n\n.door-off .door-moving-part {\n  transform: rotate(var(--door-swing));\n}\n\n.door-off .door-arc {\n  opacity: 0;\n}\n\n`;
   
-  css += `.window-glass {\n  transition: transform 0.6s ease;\n}\n\n.window-on .window-glass {\n  transform: translateX(calc(var(--window-width, 40px) * 0.45));\n}\n\n`;
+  css += `.window-glass {\n  transition: transform 0.6s ease;\n}\n\n.window-on .window-glass {\n  transform: translateX(calc(var(--window-width, 40px) * -0.45));\n}\n\n`;
 
   css += `.outlet-svg {\n  transition: color 0.3s ease;\n  color: var(--outlet-off-color, #94a3b8);\n}\n\n.outlet-on .outlet-svg {\n  color: var(--outlet-on-color, #22c55e);\n}\n\n`;
   

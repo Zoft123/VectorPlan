@@ -413,22 +413,32 @@ export function Canvas({
                    >
                      {ent.kind === 'Window' && (
                        <>
+                         {/* Window Sill / Background */}
                          <rect x={-ent.width/2} y={-ent.depth/2} width={ent.width} height={ent.depth} fill="rgba(56, 189, 248, 0.15)" stroke={ent.color} strokeWidth="2" />
+                         
+                         {/* Fixed Pane */}
+                         <line x1={-ent.width/2} y1="-1.5" x2={0} y2="-1.5" stroke="#38bdf8" strokeWidth="2" />
+                         
+                         {/* Sliding Pane (Defaults to Open in Edit Mode, closes in Preview) */}
                          <g style={{ 
-                             transform: (editorSettings.mode === 'preview' && ent.isOn) ? `translateX(${ent.width * 0.45}px)` : 'translateX(0px)', 
+                             transform: (editorSettings.mode === 'preview' && !ent.isOn) ? 'translateX(0px)' : `translateX(${-ent.width * 0.45}px)`, 
                              transition: 'transform 0.5s ease' 
                          }}>
-                           <line x1={-ent.width/2} y1="-1.5" x2={ent.width/2} y2="-1.5" stroke="#38bdf8" strokeWidth="2" />
-                           <line x1={-ent.width/2} y1="1.5" x2={ent.width/2} y2="1.5" stroke="#38bdf8" strokeWidth="2" />
+                           <line x1={0} y1="1.5" x2={ent.width/2} y2="1.5" stroke="#38bdf8" strokeWidth="2" />
                          </g>
                        </>
                      )}
                      
                      {ent.kind === 'Door' && (
                        <>
+                         {/* Wall Caps */}
                          <line x1={-ent.width/2} y1={-ent.depth/2} x2={-ent.width/2} y2={ent.depth/2} stroke={ent.color} strokeWidth="2" />
                          <line x1={ent.width/2} y1={-ent.depth/2} x2={ent.width/2} y2={ent.depth/2} stroke={ent.color} strokeWidth="2" />
+                         
+                         {/* Subtle Threshold */}
                          <line x1={-ent.width/2} y1={0} x2={ent.width/2} y2={0} stroke={ent.color} strokeWidth="1" strokeDasharray="2 4" opacity="0.5" />
+                         
+                         {/* Moving Door Slab & Arc */}
                          <g style={{ 
                            transformOrigin: `${-ent.width/2}px 0px`, 
                            transform: (editorSettings.mode === 'preview' && !ent.isOn) ? `rotate(${ent.flip ? -90 : 90}deg)` : 'rotate(0deg)',
@@ -440,6 +450,7 @@ export function Canvas({
                        </>
                      )}
                      
+                     {/* Transparent Hitbox */}
                      <rect 
                        x={-ent.width/2} 
                        y={ent.kind === 'Door' ? (ent.flip ? 0 : -ent.width) : -ent.depth/2} 
