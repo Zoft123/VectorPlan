@@ -155,16 +155,15 @@ export function Inspector({
                      <p className="text-[10px] text-slate-500 dark:text-slate-400">Link to a binary_sensor (e.g. contact sensor) to automatically animate open and closed states.</p>
                    </div>
 
-                   <h3 className="text-xs font-bold text-slate-500 mt-6 mb-2 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800 pb-1">Dimensions & Placement</h3>
+                   <h3 className="text-xs font-bold text-slate-500 mt-6 mb-2 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800 pb-1">Placement</h3>
                    
                    <div className="grid grid-cols-2 gap-2 mb-3">
                      <div><label className="block text-[10px] text-slate-400 mb-1">CENTER X</label><input type="number" value={Math.round(selectedEntity.x)} onChange={(e) => updateEntity(selectedEntity.id, { x: parseInt(e.target.value) || 0 })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-1.5 text-xs text-center focus:ring-2 outline-none font-mono" /></div>
                      <div><label className="block text-[10px] text-slate-400 mb-1">CENTER Y</label><input type="number" value={Math.round(selectedEntity.y)} onChange={(e) => updateEntity(selectedEntity.id, { y: parseInt(e.target.value) || 0 })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-1.5 text-xs text-center focus:ring-2 outline-none font-mono" /></div>
                    </div>
 
-                   <div className="grid grid-cols-2 gap-4">
-                     <div><label className="block text-[10px] text-slate-400 mb-1 uppercase">Opening Size</label><input type="number" value={selectedEntity.width || 80} onChange={(e) => updateEntity(selectedEntity.id, { width: parseInt(e.target.value) || 10 })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono" /></div>
-                     <div><label className="block text-[10px] text-slate-400 mb-1 uppercase">Wall Thickness</label><input type="number" value={selectedEntity.depth || 10} onChange={(e) => updateEntity(selectedEntity.id, { depth: parseInt(e.target.value) || 2 })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono" /></div>
+                   <div className="mb-4">
+                     <p className="text-[10px] text-slate-400 italic">Use the visual handles on the canvas to adjust the angle, opening size, and wall thickness.</p>
                    </div>
 
                    <h3 className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-6 mb-2 pt-2 border-t border-slate-100 dark:border-slate-800">Structural Styling</h3>

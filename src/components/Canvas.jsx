@@ -19,6 +19,10 @@ export function Canvas({
   const [isRotating, setIsRotating] = useState(false);
   const rotateRef = useRef({ isRotating: false, id: null, startAngle: 0, startEntityAngle: 0 });
 
+  // Track resizing state
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeRef = useRef({ isResizing: false, id: null, type: null });
+
   const handlePointerDownCanvas = (e) => {
     if (e.button === 1 || isPanMode) {
       e.preventDefault();
@@ -106,12 +110,10 @@ export function Canvas({
       if (rotEnt) {
         const angleToCenter = Math.atan2(y - rotEnt.y, x - rotEnt.x);
         let angleDiff = angleToCenter - rotateRef.current.startAngle;
-        // Normalize angle difference to avoid jumps
         angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
         
         let newAngle = rotateRef.current.startEntityAngle + (angleDiff * (180 / Math.PI));
         
-        // Snap to 15 degree increments if angle snapping is on
         if (editorSettings.snapAngles) {
             newAngle = Math.round(newAngle / 15) * 15;
         } else {
@@ -122,6 +124,39 @@ export function Canvas({
         setEntities(prev => prev.map(ent => 
           ent.id === rotEnt.id ? { ...ent, angle: newAngle } : ent
         ));
+      }
+      return;
+    }
+
+    // Handle Resizing
+    if (resizeRef.current.isResizing) {
+      const resEnt = entities.find(ent => ent.id === resizeRef.current.id);
+      if (resEnt) {
+        const dx = x - resEnt.x;
+        const dy = y - resEnt.y;
+        
+        // Convert mouse movement to the entity's local rotated coordinate space
+        const angleRad = -(resEnt.angle || 0) * (Math.PI / 180);
+        const localX = dx * Math.cos(angleRad) - dy * Math.sin(angleRad);
+        const localY = dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
+        
+        if (resizeRef.current.type === 'width') {
+          let newWidth = Math.max(10, Math.abs(localX) * 2);
+          if (editorSettings.snap) {
+             const snap = editorSettings.gridSize;
+             newWidth = Math.round(newWidth / snap) * snap;
+             newWidth = Math.max(snap, newWidth);
+          }
+          setEntities(prev => prev.map(ent => ent.id === resEnt.id ? { ...ent, width: newWidth } : ent));
+        } else if (resizeRef.current.type === 'depth') {
+          let newDepth = Math.max(2, Math.abs(localY) * 2);
+          if (editorSettings.snap) {
+             const snap = editorSettings.gridSize;
+             newDepth = Math.round(newDepth / snap) * snap;
+             newDepth = Math.max(2, newDepth); // Never let depth drop to 0
+          }
+          setEntities(prev => prev.map(ent => ent.id === resEnt.id ? { ...ent, depth: newDepth } : ent));
+        }
       }
       return;
     }
@@ -182,6 +217,8 @@ export function Canvas({
     setIsPanning(false);
     if (isRotating) setIsRotating(false);
     rotateRef.current.isRotating = false;
+    if (isResizing) setIsResizing(false);
+    resizeRef.current.isResizing = false;
   };
 
   const handleEntityPointerDown = (e, entity) => {
@@ -224,10 +261,21 @@ export function Canvas({
     };
   };
 
+  const handleResizePointerDown = (e, entity, type) => {
+    e.stopPropagation();
+    setIsResizing(true);
+    resizeRef.current = {
+      isResizing: true,
+      id: entity.id,
+      type: type
+    };
+  };
+
   let cursorClass = '';
   if (isPanMode || isPanning) cursorClass = isPanning ? 'cursor-grabbing' : 'cursor-grab';
   else if (drawingMode) cursorClass = 'cursor-crosshair';
   else if (isRotating) cursorClass = 'cursor-grabbing';
+  else if (isResizing) cursorClass = 'cursor-crosshair';
 
   let currentAngleText = '';
   if (drawingMode && drawnPoints.length > 0) {
@@ -360,14 +408,12 @@ export function Canvas({
                      transform={`translate(${ent.x}, ${ent.y}) rotate(${ent.angle})`}
                      className={(editorSettings.mode === 'edit' && !isPanMode && !isPanning) ? 'pointer-events-auto cursor-move' : (editorSettings.mode === 'preview' && ent.entityId && !isPanMode ? 'pointer-events-auto cursor-pointer' : '')}
                      onPointerDown={(e) => {
-                       if (!isRotating) handleEntityPointerDown(e, ent);
+                       if (!isRotating && !isResizing) handleEntityPointerDown(e, ent);
                      }}
                    >
                      {ent.kind === 'Window' && (
                        <>
-                         {/* Window Sill / Background */}
                          <rect x={-ent.width/2} y={-ent.depth/2} width={ent.width} height={ent.depth} fill="rgba(56, 189, 248, 0.15)" stroke={ent.color} strokeWidth="2" />
-                         {/* Double Pane Glass Lines */}
                          <g style={{ 
                              transform: (editorSettings.mode === 'preview' && ent.isOn) ? `translateX(${ent.width * 0.45}px)` : 'translateX(0px)', 
                              transition: 'transform 0.5s ease' 
@@ -380,14 +426,9 @@ export function Canvas({
                      
                      {ent.kind === 'Door' && (
                        <>
-                         {/* Wall Caps */}
                          <line x1={-ent.width/2} y1={-ent.depth/2} x2={-ent.width/2} y2={ent.depth/2} stroke={ent.color} strokeWidth="2" />
                          <line x1={ent.width/2} y1={-ent.depth/2} x2={ent.width/2} y2={ent.depth/2} stroke={ent.color} strokeWidth="2" />
-                         
-                         {/* Subtle Threshold */}
                          <line x1={-ent.width/2} y1={0} x2={ent.width/2} y2={0} stroke={ent.color} strokeWidth="1" strokeDasharray="2 4" opacity="0.5" />
-                         
-                         {/* Moving Door Slab & Arc */}
                          <g style={{ 
                            transformOrigin: `${-ent.width/2}px 0px`, 
                            transform: (editorSettings.mode === 'preview' && !ent.isOn) ? `rotate(${ent.flip ? -90 : 90}deg)` : 'rotate(0deg)',
@@ -399,7 +440,6 @@ export function Canvas({
                        </>
                      )}
                      
-                     {/* Transparent Hitbox */}
                      <rect 
                        x={-ent.width/2} 
                        y={ent.kind === 'Door' ? (ent.flip ? 0 : -ent.width) : -ent.depth/2} 
@@ -424,9 +464,19 @@ export function Canvas({
                          
                          {/* Rotation Handle */}
                          <g className="cursor-grab hover:opacity-80 transition-opacity" onPointerDown={(e) => handleRotatePointerDown(e, ent)}>
-                           <line x1={ent.width/2 + 5} y1="0" x2={ent.width/2 + 25} y2="0" stroke="#3b82f6" strokeWidth="1" strokeDasharray="2 2" />
-                           <circle cx={ent.width/2 + 25} cy="0" r="6" fill="#fff" stroke="#3b82f6" strokeWidth="2" />
-                           <circle cx={ent.width/2 + 25} cy="0" r="2" fill="#3b82f6" pointerEvents="none" />
+                           <line x1={ent.width/2 + 8} y1="0" x2={ent.width/2 + 28} y2="0" stroke="#3b82f6" strokeWidth="1" strokeDasharray="2 2" />
+                           <circle cx={ent.width/2 + 28} cy="0" r="6" fill="#fff" stroke="#3b82f6" strokeWidth="2" />
+                           <circle cx={ent.width/2 + 28} cy="0" r="2" fill="#3b82f6" pointerEvents="none" />
+                         </g>
+
+                         {/* Width (Opening Size) Resize Handle */}
+                         <g className="cursor-ew-resize hover:opacity-80 transition-opacity" onPointerDown={(e) => handleResizePointerDown(e, ent, 'width')}>
+                           <rect x={ent.width/2 - 4} y={-4} width="8" height="8" fill="#fff" stroke="#10b981" strokeWidth="2" />
+                         </g>
+
+                         {/* Depth (Wall Thickness) Resize Handle */}
+                         <g className="cursor-ns-resize hover:opacity-80 transition-opacity" onPointerDown={(e) => handleResizePointerDown(e, ent, 'depth')}>
+                           <rect x={-4} y={ent.depth/2 - 4} width="8" height="8" fill="#fff" stroke="#8b5cf6" strokeWidth="2" />
                          </g>
                        </>
                      )}
