@@ -1,3 +1,4 @@
+/* STREAMING_CHUNK:Importing components and setting up the main App... */
 import React, { useState, useRef, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Inspector } from './components/Inspector';
@@ -12,8 +13,10 @@ export default function App() {
   const [canvasSize, setCanvasSize] = useState({ width: 1600, height: 900 });
   const [isDark, setIsDark] = useState(true);
   
+  /* STREAMING_CHUNK:Initializing state variables for new UI features... */
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showCode, setShowCode] = useState(false);
+  const [showQuickPanel, setShowQuickPanel] = useState(false); // Quick-Access Panel Toggle
   const [activeTab, setActiveTab] = useState('yaml');
 
   const [drawingMode, setDrawingMode] = useState(false);
@@ -33,6 +36,7 @@ export default function App() {
   const [haEntities, setHaEntities] = useState([]);
   const [haStatus, setHaStatus] = useState({ loading: false, error: null, connected: false });
 
+  /* STREAMING_CHUNK:Setting up editor preferences... */
   const [editorSettings, setEditorSettings] = useState({
     snap: false,
     snapAngles: false,
@@ -51,11 +55,13 @@ export default function App() {
 
   const dropdownRef = useRef(null);
   
+  // Keep a ref of the latest state for keyboard shortcuts to avoid stale closures
   const stateRef = useRef({ selectedId, entities });
   useEffect(() => {
     stateRef.current = { selectedId, entities };
   }, [selectedId, entities]);
 
+  /* STREAMING_CHUNK:Configuring global side effects and shortcuts... */
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
@@ -72,6 +78,7 @@ export default function App() {
     };
     
     const handleKeyDown = (e) => {
+      // Don't trigger shortcuts if typing in an input field
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
 
       const { selectedId, entities } = stateRef.current;
@@ -92,6 +99,7 @@ export default function App() {
         setZoom(z => Math.max(z - 0.25, 0.25));
       }
 
+      // Pro Shortcuts: Delete
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedId) {
           setEntities(prev => prev.filter(ent => ent.id !== selectedId));
@@ -99,8 +107,9 @@ export default function App() {
         }
       }
 
+      // Pro Shortcuts: Duplicate (Ctrl+D or Cmd+D)
       if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-        e.preventDefault();
+        e.preventDefault(); 
         if (selectedId) {
           const original = entities.find(ent => ent.id === selectedId);
           if (original) {
@@ -108,7 +117,7 @@ export default function App() {
             const newEnt = {
               ...original,
               id: newId,
-              x: original.x + 20,
+              x: original.x + 20, 
               y: original.y + 20,
               name: `${original.name} (Copy)`,
               roomId: original.kind === 'Room' ? `${original.roomId}_copy` : undefined,
@@ -130,6 +139,7 @@ export default function App() {
     };
   }, [drawingMode, isFullscreen, roomNamePrompt]);
 
+  /* STREAMING_CHUNK:Defining core logic for adding and updating entities... */
   const updateEntity = (id, updates) => setEntities(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
 
   const addEntity = (kind) => {
@@ -138,6 +148,7 @@ export default function App() {
       id, kind, name: `New ${kind}`,
       entityId: ['Door', 'Window'].includes(kind) ? '' : `${kind.toLowerCase()}.new_${kind.toLowerCase()}`,
       svgId: `new_${kind.toLowerCase()}`,
+      parentEntityId: '', 
       x: canvasSize.width / 2, y: canvasSize.height / 2, radius: kind === 'Garage' ? 60 : 40,
       lightStyle: 'glow', targetRoomId: '', glowRx: 150, glowRy: 150, whiteIntensity: 60, tintIntensity: 50,
       spinSpeed: '2s', spinDirection: 'spin-cw', color: ['Door', 'Window'].includes(kind) ? '#94a3b8' : '#000000',
@@ -186,6 +197,7 @@ export default function App() {
     }
   };
 
+  /* STREAMING_CHUNK:Rendering the main application wrapper... */
   return (
     <div>
       <div className="min-h-screen h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-200 flex flex-col overflow-hidden">
@@ -209,6 +221,7 @@ export default function App() {
               setEditorSettings={setEditorSettings} paths={paths} setPaths={setPaths}
               handleImageUpload={handleImageUpload} setDrawingMode={setDrawingMode}
               duplicateEntity={duplicateEntity}
+              showQuickPanel={showQuickPanel} setShowQuickPanel={setShowQuickPanel}
             />
           )}
 
@@ -226,6 +239,7 @@ export default function App() {
             roomNamePrompt={roomNamePrompt} setRoomNamePrompt={setRoomNamePrompt}
             roomNameInput={roomNameInput} setRoomNameInput={setRoomNameInput}
             isFullscreen={isFullscreen}
+            showQuickPanel={showQuickPanel} setShowQuickPanel={setShowQuickPanel}
           />
         </div>
 

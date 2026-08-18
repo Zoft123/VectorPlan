@@ -1,18 +1,66 @@
+/* STREAMING_CHUNK:Setting up the Inspector Panel layout... */
 import React from 'react';
 import { Icons } from '../utils/icons';
 
 export function Inspector({
   entities, setEntities, updateEntity, selectedId, haEntities,
   editorSettings, setEditorSettings, paths, setPaths,
-  handleImageUpload, setDrawingMode, setSelectedId, duplicateEntity
+  handleImageUpload, setDrawingMode, setSelectedId, duplicateEntity,
+  showQuickPanel, setShowQuickPanel
 }) {
   const selectedEntity = entities.find(e => e.id === selectedId);
   const roomsList = entities.filter(e => e.kind === 'Room');
 
   return (
-    <div className="w-72 md:w-80 flex-shrink-0 flex flex-col gap-6 overflow-y-auto pr-2 pb-2">
+    <div className="w-72 md:w-80 flex-shrink-0 flex flex-col gap-6 overflow-y-auto pr-2 pb-2 custom-scrollbar">
+      
+      {/* STREAMING_CHUNK:Rendering the Global Editor Settings... */}
       <div className="bg-white dark:bg-slate-950 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <h2 className="font-semibold mb-4 flex items-center gap-2"><Icons.Upload /> Import</h2>
+        <h2 className="font-semibold mb-4 flex items-center gap-2"><Icons.Sun /> Editor Settings</h2>
+        
+        <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Workspace Mode</h3>
+        <div className="flex gap-2 mb-6">
+           <button onClick={() => {setEditorSettings(s => ({ ...s, mode: 'edit' })); setDrawingMode(false);}} className={`flex-1 py-1.5 rounded-lg text-xs font-semibold ${editorSettings.mode === 'edit' ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>Edit Mode</button>
+           <button onClick={() => {setEditorSettings(s => ({ ...s, mode: 'preview' })); setDrawingMode(false); setSelectedId(null);}} className={`flex-1 py-1.5 rounded-lg text-xs font-semibold ${editorSettings.mode === 'preview' ? 'bg-green-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>Preview Mode</button>
+        </div>
+
+        {/* Quick Access Dashboard Toggle */}
+        <div className="mb-6 flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+           <label className="text-xs font-semibold flex items-center gap-2 text-slate-800 dark:text-slate-200">
+              <Icons.Server className="w-4 h-4 text-blue-500"/> Quick-Access Panel
+           </label>
+           <button 
+             onClick={() => setShowQuickPanel(!showQuickPanel)}
+             className={`relative w-8 h-4 rounded-full transition-colors ${showQuickPanel ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'}`}
+           >
+             <span className={`absolute top-0.5 left-0.5 bg-white w-3 h-3 rounded-full transition-transform ${showQuickPanel ? 'translate-x-4' : 'translate-x-0'}`} />
+           </button>
+        </div>
+
+        <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Grid & Snapping</h3>
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <button onClick={() => setEditorSettings(s => ({ ...s, snap: !s.snap }))} className={`py-1.5 rounded-lg text-[10px] font-semibold transition-colors ${editorSettings.snap ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>Snap Pos</button>
+          <button onClick={() => setEditorSettings(s => ({ ...s, grid: !s.grid }))} className={`py-1.5 rounded-lg text-[10px] font-semibold transition-colors ${editorSettings.grid ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>Show Grid</button>
+          <button onClick={() => setEditorSettings(s => ({ ...s, snapAngles: !s.snapAngles }))} className={`py-1.5 rounded-lg text-[10px] font-semibold transition-colors ${editorSettings.snapAngles ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>90° Angles</button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">GRID SIZE</label>
+            <input type="number" value={editorSettings.gridSize} onChange={e => setEditorSettings(s => ({ ...s, gridSize: parseInt(e.target.value) || 1 }))} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none" />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">GRID COLOR</label>
+            <div className="flex items-center gap-2">
+               <input type="color" value={editorSettings.gridColor || '#94a3b8'} onChange={e => setEditorSettings(s => ({ ...s, gridColor: e.target.value }))} className="w-full h-9 rounded cursor-pointer border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-0.5" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      /* STREAMING_CHUNK:Rendering the Asset Uploader and Outputs... */
+      <div className="bg-white dark:bg-slate-950 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+        <h2 className="font-semibold mb-4 flex items-center gap-2"><Icons.Upload /> Blueprint Asset</h2>
         <label className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors text-center group">
           <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
             <Icons.Upload />
@@ -24,38 +72,6 @@ export function Inspector({
       </div>
 
       <div className="bg-white dark:bg-slate-950 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <h2 className="font-semibold mb-4 flex items-center gap-2"><Icons.Sun /> Editor Settings</h2>
-        
-        <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Workspace Mode</h3>
-        <div className="flex gap-2 mb-6">
-           <button onClick={() => {setEditorSettings(s => ({ ...s, mode: 'edit' })); setDrawingMode(false);}} className={`flex-1 py-1.5 rounded-lg text-xs font-semibold ${editorSettings.mode === 'edit' ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>Edit Mode</button>
-           <button onClick={() => {setEditorSettings(s => ({ ...s, mode: 'preview' })); setDrawingMode(false); setSelectedId(null);}} className={`flex-1 py-1.5 rounded-lg text-xs font-semibold ${editorSettings.mode === 'preview' ? 'bg-green-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'}`}>Preview Mode</button>
-        </div>
-
-        <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-2">Grid & Snapping</h3>
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <button onClick={() => setEditorSettings(s => ({ ...s, snap: !s.snap }))} className={`py-1.5 rounded-lg text-[10px] font-semibold transition-colors ${editorSettings.snap ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>Snap Pos</button>
-          <button onClick={() => setEditorSettings(s => ({ ...s, grid: !s.grid }))} className={`py-1.5 rounded-lg text-[10px] font-semibold transition-colors ${editorSettings.grid ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>Show Grid</button>
-          <button onClick={() => setEditorSettings(s => ({ ...s, snapAngles: !s.snapAngles }))} className={`py-1.5 rounded-lg text-[10px] font-semibold transition-colors ${editorSettings.snapAngles ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>90° Angles</button>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Size</label>
-            <input type="number" value={editorSettings.gridSize} onChange={e => setEditorSettings(s => ({ ...s, gridSize: parseInt(e.target.value) || 1 }))} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-1.5 text-xs text-center focus:ring-2 outline-none font-mono" />
-          </div>
-          <div>
-            <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Color</label>
-            <input type="color" value={editorSettings.gridColor || '#94a3b8'} onChange={e => setEditorSettings(s => ({ ...s, gridColor: e.target.value }))} className="w-full h-[30px] rounded cursor-pointer border-0 p-0" />
-          </div>
-          <div>
-            <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Snap</label>
-            <input type="number" value={editorSettings.snapDistance} onChange={e => setEditorSettings(s => ({ ...s, snapDistance: parseInt(e.target.value) || 1 }))} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-1.5 text-xs text-center focus:ring-2 outline-none font-mono" />
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white dark:bg-slate-950 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <h2 className="font-semibold mb-4 flex items-center gap-2"><Icons.Code /> Output Paths</h2>
         <div className="space-y-4">
           <div><label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">SVG PATH</label><input type="text" value={paths.svg} onChange={e => setPaths({ ...paths, svg: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-xs font-mono outline-none" /></div>
@@ -64,13 +80,14 @@ export function Inspector({
         </div>
       </div>
 
+      /* STREAMING_CHUNK:Rendering the Entity Inspector properties... */
       <div className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden z-20 flex flex-col flex-shrink-0 min-h-[400px]">
         <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
-          <h2 className="font-semibold flex items-center gap-2"><Icons.Code /> Inspector</h2>
+          <h2 className="font-semibold flex items-center gap-2"><Icons.Pen /> Inspector</h2>
           <span className="text-xs bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded-full font-semibold">{entities.length} items</span>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
           {selectedEntity ? (
             <div className="space-y-4">
              {selectedEntity.kind === 'Room' ? (
@@ -99,7 +116,7 @@ export function Inspector({
                        <div className="mb-3">
                          <label className="block text-xs text-slate-400 mb-1">Color</label>
                          <div className="flex items-center gap-2">
-                            <input type="color" value={selectedEntity.fillColor || '#ffffff'} onChange={(e) => updateEntity(selectedEntity.id, { fillColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                            <input type="color" value={selectedEntity.fillColor || '#ffffff'} onChange={(e) => updateEntity(selectedEntity.id, { fillColor: e.target.value })} className="w-full h-8 rounded cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5" />
                          </div>
                        </div>
                        <div>
@@ -113,7 +130,7 @@ export function Inspector({
                        <div className="mb-3">
                          <label className="block text-xs text-slate-400 mb-1">Color</label>
                          <div className="flex items-center gap-2">
-                            <input type="color" value={selectedEntity.offFillColor || '#000000'} onChange={(e) => updateEntity(selectedEntity.id, { offFillColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                            <input type="color" value={selectedEntity.offFillColor || '#000000'} onChange={(e) => updateEntity(selectedEntity.id, { offFillColor: e.target.value })} className="w-full h-8 rounded cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5" />
                          </div>
                        </div>
                        <div>
@@ -156,10 +173,10 @@ export function Inspector({
                    <div className="mt-4"><label className="block text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">SVG Base ID</label><input type="text" value={selectedEntity.svgId} onChange={(e) => updateEntity(selectedEntity.id, { svgId: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none font-mono" /></div>
 
                    <div className="mb-4 mt-2">
-                     <p className="text-[10px] text-slate-500 dark:text-slate-400">Link to a binary_sensor (e.g. contact sensor) to automatically animate open and closed states.</p>
+                     <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">Link to a binary_sensor (e.g. contact sensor) to automatically animate open and closed states in Preview mode.</p>
                    </div>
 
-                   <h3 className="text-xs font-bold text-slate-500 mt-6 mb-2 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800 pb-1">Placement</h3>
+                   <h3 className="text-xs font-bold text-slate-500 mt-6 mb-2 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800 pb-1">Dimensions & Placement</h3>
                    
                    <div className="grid grid-cols-2 gap-2 mb-3">
                      <div><label className="block text-[10px] text-slate-400 mb-1">CENTER X</label><input type="number" value={Math.round(selectedEntity.x)} onChange={(e) => updateEntity(selectedEntity.id, { x: parseInt(e.target.value) || 0 })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-1.5 text-xs text-center focus:ring-2 outline-none font-mono" /></div>
@@ -174,7 +191,7 @@ export function Inspector({
                    <div className="mb-4">
                      <label className="block text-xs text-slate-400 mb-1">Blueprint Color</label>
                      <div className="flex items-center gap-3">
-                        <input type="color" value={selectedEntity.color || '#94a3b8'} onChange={(e) => updateEntity(selectedEntity.id, { color: e.target.value })} className="w-10 h-10 rounded cursor-pointer border-0 p-0" />
+                        <input type="color" value={selectedEntity.color || '#94a3b8'} onChange={(e) => updateEntity(selectedEntity.id, { color: e.target.value })} className="w-10 h-10 rounded cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5" />
                         <span className="text-xs text-slate-500 font-mono bg-slate-50 dark:bg-slate-950 px-2 py-1 rounded border border-slate-200 dark:border-slate-800">{selectedEntity.color || '#94a3b8'}</span>
                      </div>
                    </div>
@@ -217,6 +234,15 @@ export function Inspector({
                    
                    <div><label className="block text-xs text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wide">SVG Base ID</label><input type="text" value={selectedEntity.svgId} onChange={(e) => updateEntity(selectedEntity.id, { svgId: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none font-mono" /></div>
 
+                   <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                     <h3 className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Logic & Dependencies</h3>
+                     <div>
+                       <label className="block text-xs text-slate-400 mb-1">Parent Entity ID (Optional)</label>
+                       <input type="text" placeholder="e.g. switch.dining_room" value={selectedEntity.parentEntityId || ''} onChange={(e) => updateEntity(selectedEntity.id, { parentEntityId: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg p-2 text-sm focus:ring-2 outline-none font-mono" />
+                       <p className="text-[10px] text-slate-500 mt-1 leading-tight">Disables interactions with this entity if the parent entity is OFF.</p>
+                     </div>
+                   </div>
+
                    <h3 className="text-xs font-bold text-slate-500 mt-6 mb-2 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800 pb-1">Position & Size</h3>
                    <div className="grid grid-cols-3 gap-2">
                      <div><label className="block text-[10px] text-slate-400 mb-1">X</label><input type="number" value={Math.round(selectedEntity.x)} onChange={(e) => updateEntity(selectedEntity.id, { x: parseInt(e.target.value) || 0 })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-1.5 text-xs text-center focus:ring-2 outline-none font-mono" /></div>
@@ -230,7 +256,7 @@ export function Inspector({
                        <div className="mb-4">
                          <label className="block text-xs text-slate-400 mb-1">Fan Color</label>
                          <div className="flex items-center gap-3">
-                            <input type="color" value={selectedEntity.color || '#000000'} onChange={(e) => updateEntity(selectedEntity.id, { color: e.target.value })} className="w-10 h-10 rounded cursor-pointer border-0 p-0" />
+                            <input type="color" value={selectedEntity.color || '#000000'} onChange={(e) => updateEntity(selectedEntity.id, { color: e.target.value })} className="w-10 h-10 rounded cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5" />
                             <span className="text-xs text-slate-500 font-mono bg-slate-50 dark:bg-slate-950 px-2 py-1 rounded border border-slate-200 dark:border-slate-800">{selectedEntity.color || '#000000'}</span>
                          </div>
                        </div>
@@ -246,7 +272,7 @@ export function Inspector({
                        </div>
                        <div className="mb-4">
                          <label className="block text-xs text-slate-400 mb-1">CUSTOM SVG CODE (Optional)</label>
-                         <textarea rows={3} placeholder='<svg viewBox="0 0 24 24"><path d="..."/></svg>' value={selectedEntity.customSVG || ''} onChange={(e) => updateEntity(selectedEntity.id, { customSVG: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono" />
+                         <textarea rows={3} placeholder='<svg viewBox="0 0 24 24"><path d="..."/></svg>' value={selectedEntity.customSVG || ''} onChange={(e) => updateEntity(selectedEntity.id, { customSVG: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono custom-scrollbar" />
                        </div>
                      </div>
                    )}
@@ -258,19 +284,19 @@ export function Inspector({
                          <div>
                            <label className="block text-xs text-slate-400 mb-1">On Color</label>
                            <div className="flex items-center gap-2">
-                              <input type="color" value={selectedEntity.onColor || '#22c55e'} onChange={(e) => updateEntity(selectedEntity.id, { onColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                              <input type="color" value={selectedEntity.onColor || '#22c55e'} onChange={(e) => updateEntity(selectedEntity.id, { onColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5" />
                            </div>
                          </div>
                          <div>
                            <label className="block text-xs text-slate-400 mb-1">Off Color</label>
                            <div className="flex items-center gap-2">
-                              <input type="color" value={selectedEntity.offColor || '#94a3b8'} onChange={(e) => updateEntity(selectedEntity.id, { offColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                              <input type="color" value={selectedEntity.offColor || '#94a3b8'} onChange={(e) => updateEntity(selectedEntity.id, { offColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5" />
                            </div>
                          </div>
                        </div>
                        <div className="mb-4">
                          <label className="block text-xs text-slate-400 mb-1">CUSTOM SVG CODE (Optional)</label>
-                         <textarea rows={3} placeholder='<svg viewBox="0 0 24 24"><path d="..."/></svg>' value={selectedEntity.customSVG || ''} onChange={(e) => updateEntity(selectedEntity.id, { customSVG: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono" />
+                         <textarea rows={3} placeholder='<svg viewBox="0 0 24 24"><path d="..."/></svg>' value={selectedEntity.customSVG || ''} onChange={(e) => updateEntity(selectedEntity.id, { customSVG: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono custom-scrollbar" />
                        </div>
                      </div>
                    )}
@@ -282,19 +308,19 @@ export function Inspector({
                          <div>
                            <label className="block text-xs text-slate-400 mb-1">Unlocked Color</label>
                            <div className="flex items-center gap-2">
-                              <input type="color" value={selectedEntity.unlockedColor || '#22c55e'} onChange={(e) => updateEntity(selectedEntity.id, { unlockedColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                              <input type="color" value={selectedEntity.unlockedColor || '#22c55e'} onChange={(e) => updateEntity(selectedEntity.id, { unlockedColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5" />
                            </div>
                          </div>
                          <div>
                            <label className="block text-xs text-slate-400 mb-1">Locked Color</label>
                            <div className="flex items-center gap-2">
-                              <input type="color" value={selectedEntity.lockedColor || '#000000'} onChange={(e) => updateEntity(selectedEntity.id, { lockedColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                              <input type="color" value={selectedEntity.lockedColor || '#000000'} onChange={(e) => updateEntity(selectedEntity.id, { lockedColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer border border-slate-200 dark:border-slate-700 p-0.5" />
                            </div>
                          </div>
                        </div>
                        <div className="mb-4">
                          <label className="block text-xs text-slate-400 mb-1">CUSTOM SVG CODE (Optional)</label>
-                         <textarea rows={3} placeholder='<svg viewBox="0 0 24 24"><path d="..."/></svg>' value={selectedEntity.customSVG || ''} onChange={(e) => updateEntity(selectedEntity.id, { customSVG: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono" />
+                         <textarea rows={3} placeholder='<svg viewBox="0 0 24 24"><path d="..."/></svg>' value={selectedEntity.customSVG || ''} onChange={(e) => updateEntity(selectedEntity.id, { customSVG: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono custom-scrollbar" />
                        </div>
                      </div>
                    )}
@@ -312,7 +338,7 @@ export function Inspector({
                        <p className="text-[10px] text-slate-500 mb-4">Clicking this entity in Home Assistant opens the "More Info" dialog. It automatically pulls the 'current_temperature' attribute.</p>
                        <div className="mb-4">
                          <label className="block text-xs text-slate-400 mb-1">CUSTOM SVG CODE (Optional)</label>
-                         <textarea rows={3} placeholder='<svg viewBox="0 0 24 24"><path d="..."/></svg>' value={selectedEntity.customSVG || ''} onChange={(e) => updateEntity(selectedEntity.id, { customSVG: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono" />
+                         <textarea rows={3} placeholder='<svg viewBox="0 0 24 24"><path d="..."/></svg>' value={selectedEntity.customSVG || ''} onChange={(e) => updateEntity(selectedEntity.id, { customSVG: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono custom-scrollbar" />
                        </div>
                      </div>
                    )}
@@ -349,7 +375,7 @@ export function Inspector({
                        
                        <div className="mb-4 mt-4">
                          <label className="block text-xs text-slate-400 mb-1">CUSTOM SVG CODE (Optional)</label>
-                         <textarea rows={3} placeholder='<svg viewBox="0 0 24 24"><path d="..."/></svg>' value={selectedEntity.customSVG || ''} onChange={(e) => updateEntity(selectedEntity.id, { customSVG: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono" />
+                         <textarea rows={3} placeholder='<svg viewBox="0 0 24 24"><path d="..."/></svg>' value={selectedEntity.customSVG || ''} onChange={(e) => updateEntity(selectedEntity.id, { customSVG: e.target.value })} className="w-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded p-2 text-xs focus:ring-2 outline-none font-mono custom-scrollbar" />
                        </div>
                      </div>
                    )}

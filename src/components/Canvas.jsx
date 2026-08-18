@@ -1,4 +1,5 @@
-import React, { useRef, useState } from 'react';
+/* STREAMING_CHUNK:Setting up Quick-Access Panel state handling... */
+import React, { useRef, useState, useEffect } from 'react';
 import { Icons } from '../utils/icons';
 
 export function Canvas({
@@ -8,21 +9,55 @@ export function Canvas({
   drawingMode, setDrawingMode, drawnPoints, setDrawnPoints,
   mousePos, setMousePos, editorSettings,
   roomNamePrompt, setRoomNamePrompt, roomNameInput, setRoomNameInput,
-  isFullscreen
+  isFullscreen, showQuickPanel, setShowQuickPanel
 }) {
   const canvasRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const dragRef = useRef({ isDragging: false, id: null, offsetX: 0, offsetY: 0 });
   const panRef = useRef({ startX: 0, startY: 0, scrollLeft: 0, scrollTop: 0 });
   
-  // Track rotation state
   const [isRotating, setIsRotating] = useState(false);
   const rotateRef = useRef({ isRotating: false, id: null, startAngle: 0, startEntityAngle: 0 });
 
-  // Track resizing state
   const [isResizing, setIsResizing] = useState(false);
   const resizeRef = useRef({ isResizing: false, id: null, type: null });
 
+  // Floating Dashboard State
+  const [panelPos, setPanelPos] = useState({ x: 40, y: 80 }); 
+  const [isDraggingPanel, setIsDraggingPanel] = useState(false);
+  const panelDragRef = useRef({ startX: 0, startY: 0, initialX: 0, initialY: 0 });
+
+  useEffect(() => {
+    if (!isDraggingPanel) return;
+    const handleMove = (e) => {
+      const dx = e.clientX - panelDragRef.current.startX;
+      const dy = e.clientY - panelDragRef.current.startY;
+      setPanelPos({
+        x: Math.max(0, panelDragRef.current.initialX + dx),
+        y: Math.max(0, panelDragRef.current.initialY + dy)
+      });
+    };
+    const handleUp = () => setIsDraggingPanel(false);
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+    };
+  }, [isDraggingPanel]);
+
+  const handlePanelPointerDown = (e) => {
+    e.stopPropagation();
+    setIsDraggingPanel(true);
+    panelDragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: panelPos.x,
+      initialY: panelPos.y
+    };
+  };
+
+  /* STREAMING_CHUNK:Canvas pointer interaction logic... */
   const handlePointerDownCanvas = (e) => {
     if (e.button === 1 || isPanMode) {
       e.preventDefault();
@@ -104,7 +139,6 @@ export function Canvas({
     const x = (e.clientX - rect.left) / zoom;
     const y = (e.clientY - rect.top) / zoom;
 
-    // Handle Rotation
     if (rotateRef.current.isRotating) {
       const rotEnt = entities.find(ent => ent.id === rotateRef.current.id);
       if (rotEnt) {
@@ -128,14 +162,12 @@ export function Canvas({
       return;
     }
 
-    // Handle Resizing
     if (resizeRef.current.isResizing) {
       const resEnt = entities.find(ent => ent.id === resizeRef.current.id);
       if (resEnt) {
         const dx = x - resEnt.x;
         const dy = y - resEnt.y;
         
-        // Convert mouse movement to the entity's local rotated coordinate space
         const angleRad = -(resEnt.angle || 0) * (Math.PI / 180);
         const localX = dx * Math.cos(angleRad) - dy * Math.sin(angleRad);
         const localY = dx * Math.sin(angleRad) + dy * Math.cos(angleRad);
@@ -153,7 +185,7 @@ export function Canvas({
           if (editorSettings.snap) {
              const snap = editorSettings.gridSize;
              newDepth = Math.round(newDepth / snap) * snap;
-             newDepth = Math.max(2, newDepth); // Never let depth drop to 0
+             newDepth = Math.max(2, newDepth); 
           }
           setEntities(prev => prev.map(ent => ent.id === resEnt.id ? { ...ent, depth: newDepth } : ent));
         }
@@ -221,10 +253,15 @@ export function Canvas({
     resizeRef.current.isResizing = false;
   };
 
+  /* STREAMING_CHUNK:Entity selection and context clicks... */
   const handleEntityPointerDown = (e, entity) => {
     if (isPanMode || e.button === 1) return; 
     
+    const parentEnt = entity.parentEntityId ? entities.find(p => p.entityId === entity.parentEntityId) : null;
+    const isDisabled = editorSettings.mode === 'preview' && parentEnt ? !parentEnt.isOn : false;
+
     if (editorSettings.mode === 'preview') {
+      if (isDisabled) return; 
       e.stopPropagation();
       updateEntity(entity.id, { isOn: !entity.isOn });
       return;
@@ -294,6 +331,25 @@ export function Canvas({
     }
   }
 
+  /* STREAMING_CHUNK:Structuring Quick-Access Panel Dashboard Data... */
+  const dashboardCategories = [
+    { title: 'Switches', type: 'switch', icon: <Icons.Light className="w-4 h-4 text-blue-400" />, items: entities.filter(e => e.kind === 'Light' && e.lightStyle === 'room') },
+    { title: 'Lights', type: 'light', icon: <Icons.Light className="w-4 h-4 text-yellow-400" />, items: entities.filter(e => e.kind === 'Light' && e.lightStyle !== 'room') },
+    { title: 'Plugs', type: 'plug', icon: <Icons.Outlet className="w-4 h-4 text-teal-400" />, items: entities.filter(e => e.kind === 'Outlet') },
+    { title: 'Locks', type: 'lock', icon: <Icons.Lock className="w-4 h-4 text-red-400" />, items: entities.filter(e => e.kind === 'Lock') },
+    { title: 'Doors', type: 'door', icon: <Icons.Door className="w-4 h-4 text-orange-400" />, items: entities.filter(e => e.kind === 'Door' || e.kind === 'Garage') },
+    { title: 'Windows', type: 'window', icon: <Icons.Window className="w-4 h-4 text-cyan-400" />, items: entities.filter(e => e.kind === 'Window') },
+    { title: 'Fans', type: 'fan', icon: <Icons.Fan className="w-4 h-4 text-indigo-400" />, items: entities.filter(e => e.kind === 'Fan') },
+    { title: 'Sensors', type: 'sensor', icon: <Icons.Sensor className="w-4 h-4 text-green-400" />, items: entities.filter(e => ['Sensor', 'Camera', 'Thermostat', 'Other'].includes(e.kind)) }
+  ].filter(cat => cat.items.length > 0);
+
+  const getStateTextAndColor = (isOn, type) => {
+    if (type === 'door' || type === 'window') return { text: isOn ? 'Open' : 'Closed', color: isOn ? 'text-green-400' : 'text-red-400' };
+    if (type === 'lock') return { text: isOn ? 'Unlocked' : 'Locked', color: isOn ? 'text-green-400' : 'text-red-400' };
+    return { text: isOn ? 'On' : 'Off', color: isOn ? 'text-blue-400' : 'text-slate-400' };
+  };
+
+  /* STREAMING_CHUNK:Rendering Canvas Workspace and Overlays... */
   return (
     <div className="flex-1 bg-slate-200 dark:bg-slate-950 rounded-xl border border-slate-300 dark:border-slate-800 shadow-inner flex flex-col overflow-hidden relative">
       
@@ -308,6 +364,63 @@ export function Canvas({
         </div>
       )}
 
+      {/* Quick-Access Floating Dashboard */}
+      {showQuickPanel && (
+        <div 
+          style={{ left: panelPos.x, top: panelPos.y, maxHeight: 'calc(100% - 60px)' }}
+          className={`absolute z-30 w-80 bg-slate-900/80 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl flex flex-col transition-opacity ${isDraggingPanel ? 'opacity-80' : 'opacity-100'}`}
+          onPointerDown={e => e.stopPropagation()}
+        >
+          <div 
+            onPointerDown={handlePanelPointerDown}
+            className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 cursor-grab active:cursor-grabbing bg-slate-800/50 rounded-t-xl"
+          >
+            <div className="flex items-center gap-2 text-slate-200 font-semibold text-sm">
+              <Icons.Server className="w-4 h-4" /> Home Overview
+            </div>
+            <button onClick={() => setShowQuickPanel(false)} className="text-slate-400 hover:text-white transition-colors"><Icons.Close className="w-4 h-4" /></button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-4 custom-scrollbar">
+             {dashboardCategories.length === 0 ? (
+               <p className="text-xs text-slate-400 text-center py-4">No entities added yet.</p>
+             ) : (
+               dashboardCategories.map(cat => (
+                 <div key={cat.title} className="bg-slate-800/60 rounded-lg border border-slate-700/50 overflow-hidden">
+                   <div className="px-3 py-2 bg-slate-800/80 border-b border-slate-700/50 flex items-center gap-2 text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                     {cat.icon} {cat.title}
+                   </div>
+                   <div className="flex flex-col">
+                     {cat.items.map(ent => {
+                        const { text, color } = getStateTextAndColor(ent.isOn, cat.type);
+                        const isToggleType = !['sensor'].includes(cat.type); // Sensors don't have toggles
+                        
+                        return (
+                          <div key={ent.id} className="flex items-center justify-between px-3 py-2 border-b border-slate-700/30 last:border-0 hover:bg-slate-700/30 transition-colors">
+                             <span className="text-xs text-slate-200 truncate pr-2 font-medium" title={ent.name}>{ent.name}</span>
+                             <div className="flex items-center gap-3 shrink-0">
+                                <span className={`text-[10px] font-bold ${color} tracking-wide w-12 text-right`}>{text}</span>
+                                {isToggleType && (
+                                  <button 
+                                    onClick={() => updateEntity(ent.id, { isOn: !ent.isOn })}
+                                    className={`relative w-8 h-4 rounded-full transition-colors focus:outline-none ${ent.isOn ? 'bg-blue-500' : 'bg-slate-600'}`}
+                                  >
+                                    <span className={`absolute top-[2px] left-[2px] bg-white w-3 h-3 rounded-full transition-transform ${ent.isOn ? 'translate-x-4' : 'translate-x-0'}`} />
+                                  </button>
+                                )}
+                             </div>
+                          </div>
+                        )
+                     })}
+                   </div>
+                 </div>
+               ))
+             )}
+          </div>
+        </div>
+      )}
+
+      {/* Floating Zoom Controls */}
       <div className="absolute bottom-6 right-6 flex items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-xl overflow-hidden z-20 pointer-events-auto">
          <button onClick={() => {setIsPanMode(false); setDrawingMode(false);}} className={`p-2.5 transition-colors ${!isPanMode && !drawingMode ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`} title="Cursor Tool"><Icons.MousePointer /></button>
          <button onClick={() => {setIsPanMode(true); setDrawingMode(false);}} className={`p-2.5 border-r border-slate-200 dark:border-slate-700 transition-colors ${isPanMode ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300' : 'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'}`} title="Pan Tool (or Middle Click)"><Icons.Hand /></button>
@@ -349,7 +462,7 @@ export function Canvas({
                  <>
                    <defs>
                      <pattern id="canvas-grid" width={editorSettings.gridSize} height={editorSettings.gridSize} patternUnits="userSpaceOnUse">
-                       <path d={`M ${editorSettings.gridSize} 0 L 0 0 0 ${editorSettings.gridSize}`} fill="none" stroke={editorSettings.gridColor || '#94a3b8'} strokeWidth="0.5" opacity="0.4"/>
+                       <path d={`M ${editorSettings.gridSize} 0 L 0 0 0 ${editorSettings.gridSize}`} fill="none" stroke={editorSettings.gridColor || 'rgba(148, 163, 184, 0.4)'} strokeWidth="0.5"/>
                      </pattern>
                    </defs>
                    <rect width="100%" height="100%" fill="url(#canvas-grid)" />
@@ -402,26 +515,29 @@ export function Canvas({
                {/* STRUCTURAL ELEMENTS (Doors/Windows) */}
                {entities.filter(e => ['Door', 'Window'].includes(e.kind)).map(ent => {
                  const isSelected = selectedId === ent.id;
+                 const parentEnt = ent.parentEntityId ? entities.find(p => p.entityId === ent.parentEntityId) : null;
+                 const isDisabled = editorSettings.mode === 'preview' && parentEnt ? !parentEnt.isOn : false;
+
                  return (
                    <g 
                      key={ent.id}
                      transform={`translate(${ent.x}, ${ent.y}) rotate(${ent.angle})`}
-                     className={(editorSettings.mode === 'edit' && !isPanMode && !isPanning) ? 'pointer-events-auto cursor-move' : (editorSettings.mode === 'preview' && ent.entityId && !isPanMode ? 'pointer-events-auto cursor-pointer' : '')}
+                     className={(editorSettings.mode === 'edit' && !isPanMode && !isPanning) ? 'pointer-events-auto cursor-move' : (editorSettings.mode === 'preview' && ent.entityId && !isDisabled && !isPanMode ? 'pointer-events-auto cursor-pointer' : '')}
+                     style={{
+                        opacity: isDisabled ? 0.4 : 1,
+                        filter: isDisabled ? 'grayscale(100%)' : 'none',
+                        transition: 'opacity 0.4s ease, filter 0.4s ease'
+                     }}
                      onPointerDown={(e) => {
                        if (!isRotating && !isResizing) handleEntityPointerDown(e, ent);
                      }}
                    >
                      {ent.kind === 'Window' && (
                        <>
-                         {/* Window Sill / Background */}
                          <rect x={-ent.width/2} y={-ent.depth/2} width={ent.width} height={ent.depth} fill="rgba(56, 189, 248, 0.15)" stroke={ent.color} strokeWidth="2" />
-                         
-                         {/* Fixed Pane */}
                          <line x1={-ent.width/2} y1="-1.5" x2={0} y2="-1.5" stroke="#38bdf8" strokeWidth="2" />
-                         
-                         {/* Sliding Pane (Defaults to Open in Edit Mode, closes in Preview) */}
                          <g style={{ 
-                             transform: (editorSettings.mode === 'preview' && !ent.isOn) ? 'translateX(0px)' : `translateX(${-ent.width * 0.45}px)`, 
+                             transform: (editorSettings.mode === 'preview' && ent.isOn) ? `translateX(${ent.width * 0.45}px)` : 'translateX(0px)', 
                              transition: 'transform 0.5s ease' 
                          }}>
                            <line x1={0} y1="1.5" x2={ent.width/2} y2="1.5" stroke="#38bdf8" strokeWidth="2" />
@@ -431,26 +547,20 @@ export function Canvas({
                      
                      {ent.kind === 'Door' && (
                        <>
-                         {/* Wall Caps */}
                          <line x1={-ent.width/2} y1={-ent.depth/2} x2={-ent.width/2} y2={ent.depth/2} stroke={ent.color} strokeWidth="2" />
                          <line x1={ent.width/2} y1={-ent.depth/2} x2={ent.width/2} y2={ent.depth/2} stroke={ent.color} strokeWidth="2" />
-                         
-                         {/* Subtle Threshold */}
                          <line x1={-ent.width/2} y1={0} x2={ent.width/2} y2={0} stroke={ent.color} strokeWidth="1" strokeDasharray="2 4" opacity="0.5" />
-                         
-                         {/* Moving Door Slab & Arc */}
                          <g style={{ 
                            transformOrigin: `${-ent.width/2}px 0px`, 
-                           transform: (editorSettings.mode === 'preview' && !ent.isOn) ? `rotate(${ent.flip ? -90 : 90}deg)` : 'rotate(0deg)',
+                           transform: (editorSettings.mode === 'preview' && ent.isOn) ? `rotate(${ent.flip ? -90 : 90}deg)` : 'rotate(0deg)',
                            transition: 'transform 0.5s ease'
                          }}>
                            <line x1={-ent.width/2} y1="0" x2={-ent.width/2} y2={ent.flip ? ent.width : -ent.width} stroke="#d97706" strokeWidth="4" strokeLinecap="round" />
-                           <path d={`M ${-ent.width/2},${ent.flip ? ent.width : -ent.width} A ${ent.width} ${ent.width} 0 0 ${ent.flip ? 0 : 1} ${ent.width/2},0`} fill="none" stroke={ent.color} strokeWidth="1" strokeDasharray="4 4" opacity="0.6" style={{ opacity: (editorSettings.mode === 'preview' && !ent.isOn) ? 0 : 0.6, transition: 'opacity 0.3s ease' }} />
+                           <path d={`M ${-ent.width/2},${ent.flip ? ent.width : -ent.width} A ${ent.width} ${ent.width} 0 0 ${ent.flip ? 0 : 1} ${ent.width/2},0`} fill="none" stroke={ent.color} strokeWidth="1" strokeDasharray="4 4" opacity="0.6" style={{ opacity: (editorSettings.mode === 'preview' && ent.isOn) ? 0 : 0.6, transition: 'opacity 0.3s ease' }} />
                          </g>
                        </>
                      )}
                      
-                     {/* Transparent Hitbox */}
                      <rect 
                        x={-ent.width/2} 
                        y={ent.kind === 'Door' ? (ent.flip ? 0 : -ent.width) : -ent.depth/2} 
@@ -473,19 +583,16 @@ export function Canvas({
                            pointerEvents="none"
                          />
                          
-                         {/* Rotation Handle */}
                          <g className="cursor-grab hover:opacity-80 transition-opacity" onPointerDown={(e) => handleRotatePointerDown(e, ent)}>
                            <line x1={ent.width/2 + 8} y1="0" x2={ent.width/2 + 28} y2="0" stroke="#3b82f6" strokeWidth="1" strokeDasharray="2 2" />
                            <circle cx={ent.width/2 + 28} cy="0" r="6" fill="#fff" stroke="#3b82f6" strokeWidth="2" />
                            <circle cx={ent.width/2 + 28} cy="0" r="2" fill="#3b82f6" pointerEvents="none" />
                          </g>
 
-                         {/* Width (Opening Size) Resize Handle */}
                          <g className="cursor-ew-resize hover:opacity-80 transition-opacity" onPointerDown={(e) => handleResizePointerDown(e, ent, 'width')}>
                            <rect x={ent.width/2 - 4} y={-4} width="8" height="8" fill="#fff" stroke="#10b981" strokeWidth="2" />
                          </g>
 
-                         {/* Depth (Wall Thickness) Resize Handle */}
                          <g className="cursor-ns-resize hover:opacity-80 transition-opacity" onPointerDown={(e) => handleResizePointerDown(e, ent, 'depth')}>
                            <rect x={-4} y={ent.depth/2 - 4} width="8" height="8" fill="#fff" stroke="#8b5cf6" strokeWidth="2" />
                          </g>
@@ -521,15 +628,21 @@ export function Canvas({
              {/* STANDARD ENTITIES */}
              {entities.filter(e => !['Room', 'Door', 'Window'].includes(e.kind)).map(entity => {
                const EntityIconCmp = Icons[entity.kind] || Icons.Sensor;
+               const parentEnt = entity.parentEntityId ? entities.find(p => p.entityId === entity.parentEntityId) : null;
+               const isDisabled = editorSettings.mode === 'preview' && parentEnt ? !parentEnt.isOn : false;
+
                return (
                 <div
                   key={entity.id}
                   onPointerDown={(e) => handleEntityPointerDown(e, entity)}
-                  className={`absolute ${editorSettings.mode === 'edit' ? (!drawingMode && !isPanMode ? 'cursor-move' : '') : (isPanMode ? '' : 'cursor-pointer')} ${drawingMode || isPanMode ? 'pointer-events-none' : ''}`}
+                  className={`absolute ${editorSettings.mode === 'edit' ? (!drawingMode && !isPanMode ? 'cursor-move' : '') : (!isDisabled && !isPanMode ? 'cursor-pointer' : '')} ${drawingMode || isPanMode || isDisabled ? 'pointer-events-none' : ''}`}
                   style={{
                     left: entity.x, top: entity.y,
                     width: entity.radius * 2, height: entity.radius * 2,
                     transform: 'translate(-50%, -50%)',
+                    opacity: isDisabled ? 0.4 : 1,
+                    filter: isDisabled ? 'grayscale(100%)' : 'none',
+                    transition: 'opacity 0.4s ease, filter 0.4s ease'
                   }}
                 >
                   {editorSettings.mode === 'edit' && (
@@ -539,7 +652,7 @@ export function Canvas({
                     </div>
                   )}
                   
-                  {entity.kind === 'Light' && entity.lightStyle !== 'room' && (editorSettings.mode === 'preview' ? entity.isOn : true) && (
+                  {entity.kind === 'Light' && entity.lightStyle !== 'room' && (editorSettings.mode === 'preview' ? entity.isOn : true) && !isDisabled && (
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none mix-blend-screen"
                       style={{
                         width: entity.glowRx * 2, height: entity.glowRy * 2,
@@ -550,7 +663,7 @@ export function Canvas({
                   )}
                   
                   {editorSettings.mode === 'preview' && entity.kind === 'Light' && entity.customSVG && (
-                    <div className={`absolute inset-0 pointer-events-none z-10 flex items-center justify-center transition-opacity duration-300 drop-shadow-md ${entity.isOn ? 'opacity-100' : 'opacity-50'}`}>
+                    <div className={`absolute inset-0 pointer-events-none z-10 flex items-center justify-center transition-opacity duration-300 drop-shadow-md ${entity.isOn && !isDisabled ? 'opacity-100' : 'opacity-50'}`}>
                        <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:fill-current" dangerouslySetInnerHTML={{ __html: entity.customSVG }} />
                     </div>
                   )}
@@ -558,7 +671,7 @@ export function Canvas({
                   {editorSettings.mode === 'preview' && entity.kind === 'Fan' && (
                     <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center drop-shadow-md" style={{ color: entity.color || '#000000' }}>
                        <div className="w-full h-full flex items-center justify-center"
-                         style={{ animationName: entity.isOn ? (entity.spinDirection === 'spin-ccw' ? 'spin-ccw-anim' : 'spin-cw-anim') : 'none', animationDuration: entity.spinSpeed || '2s', animationTimingFunction: 'linear', animationIterationCount: 'infinite' }}
+                         style={{ animationName: (entity.isOn && !isDisabled) ? (entity.spinDirection === 'spin-ccw' ? 'spin-ccw-anim' : 'spin-cw-anim') : 'none', animationDuration: entity.spinSpeed || '2s', animationTimingFunction: 'linear', animationIterationCount: 'infinite' }}
                        >
                          {entity.customSVG ? <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:fill-current" dangerouslySetInnerHTML={{ __html: entity.customSVG }} /> : <Icons.Fan className="w-full h-full" />}
                        </div>
@@ -566,19 +679,19 @@ export function Canvas({
                   )}
 
                   {editorSettings.mode === 'preview' && entity.kind === 'Outlet' && (
-                    <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center transition-colors duration-300 drop-shadow-md" style={{ color: entity.isOn ? (entity.onColor || '#22c55e') : (entity.offColor || '#94a3b8') }}>
+                    <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center transition-colors duration-300 drop-shadow-md" style={{ color: (entity.isOn && !isDisabled) ? (entity.onColor || '#22c55e') : (entity.offColor || '#94a3b8') }}>
                        {entity.customSVG ? <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:fill-current" dangerouslySetInnerHTML={{ __html: entity.customSVG }} /> : <Icons.Outlet className="w-3/4 h-3/4" />}
                     </div>
                   )}
 
                   {editorSettings.mode === 'preview' && entity.kind === 'Lock' && (
-                    <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center transition-colors duration-300 drop-shadow-md" style={{ color: entity.isOn ? (entity.unlockedColor || '#22c55e') : (entity.lockedColor || '#000000') }}>
+                    <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center transition-colors duration-300 drop-shadow-md" style={{ color: (entity.isOn && !isDisabled) ? (entity.unlockedColor || '#22c55e') : (entity.lockedColor || '#000000') }}>
                        {entity.customSVG ? <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:fill-current" dangerouslySetInnerHTML={{ __html: entity.customSVG }} /> : <Icons.Lock className="w-3/4 h-3/4" />}
                     </div>
                   )}
 
                   {editorSettings.mode === 'preview' && entity.kind === 'Thermostat' && (
-                    <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center transition-colors duration-300 drop-shadow-md" style={{ color: entity.isOn ? '#ef4444' : '#000000' }}>
+                    <div className="absolute inset-0 pointer-events-none z-10 flex flex-col items-center justify-center transition-colors duration-300 drop-shadow-md" style={{ color: (entity.isOn && !isDisabled) ? '#ef4444' : '#000000' }}>
                        <div className="w-1/2 h-1/2 flex items-center justify-center">
                           {entity.customSVG ? <div className="w-full h-full [&>svg]:w-full [&>svg]:h-full [&>svg]:fill-current" dangerouslySetInnerHTML={{ __html: entity.customSVG }} /> : <Icons.Thermostat className="w-full h-full" />}
                        </div>
@@ -587,43 +700,43 @@ export function Canvas({
                   )}
 
                   {entity.kind === 'Garage' && (
-                     <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center drop-shadow-md">
-                       <div className="w-full h-full flex items-center justify-center transition-all duration-300">
-                         {(!entity.isOn || editorSettings.mode === 'edit') ? (
-                           <svg viewBox="0 0 100 100" width="100%" height="100%">
-                             <path d="M 10 90 L 10 35 L 50 15 L 90 35 L 90 90 Z" fill="none" stroke="#003855" strokeWidth="3" strokeLinejoin="round" />
-                             <rect x="22" y="42" width="56" height="48" fill="none" stroke="#003855" strokeWidth="2.5" strokeLinejoin="round" />
-                             <line x1="22" y1="54" x2="78" y2="54" stroke="#003855" strokeWidth="2" />
-                             <line x1="22" y1="66" x2="78" y2="66" stroke="#003855" strokeWidth="2" />
-                             <line x1="22" y1="78" x2="78" y2="78" stroke="#003855" strokeWidth="2" />
-                             <rect x="27" y="45" width="12" height="6" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round" />
-                             <rect x="44" y="45" width="12" height="6" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round" />
-                             <rect x="61" y="45" width="12" height="6" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round" />
-                           </svg>
-                         ) : (
-                           <svg viewBox="0 0 100 100" width="100%" height="100%">
-                             <path d="M 10 90 L 10 35 L 50 15 L 90 35 L 90 90 Z" fill="white" stroke="#003855" strokeWidth="3" strokeLinejoin="round" />
-                             <rect x="28" y="45" width="44" height="35" fill="#0A2D42" stroke="#003855" strokeWidth="2" />
-                             <line x1="22" y1="90" x2="28" y2="80" stroke="#003855" strokeWidth="2.5" strokeLinecap="round"/>
-                             <line x1="78" y1="90" x2="72" y2="80" stroke="#003855" strokeWidth="2.5" strokeLinecap="round"/>
-                             <line x1="28" y1="80" x2="72" y2="80" stroke="#003855" strokeWidth="2.5" strokeLinecap="round"/>
-                             <line x1="28" y1="42" x2="28" y2="80" stroke="#003855" strokeWidth="2.5"/>
-                             <line x1="72" y1="42" x2="72" y2="80" stroke="#003855" strokeWidth="2.5"/>
-                             <rect x="22" y="42" width="56" height="48" fill="none" stroke="#003855" strokeWidth="2.5" strokeLinejoin="round" />
-                             <line x1="25.5" y1="58" x2="25.5" y2="90" stroke="#003855" strokeWidth="1.5" />
-                             <line x1="74.5" y1="58" x2="74.5" y2="90" stroke="#003855" strokeWidth="1.5" />
-                             <polygon points="26,43 74,43 78,48 22,48" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
-                             <polygon points="29,44.5 41,44.5 42,47 26,47" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round"/>
-                             <polygon points="44,44.5 56,44.5 56,47 44,47" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round"/>
-                             <polygon points="59,44.5 71,44.5 74,47 58,47" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round"/>
-                             <polygon points="22,48 78,48 81,52 19,52" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
-                             <polygon points="19,52 81,52 83,56 17,56" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
-                             <polygon points="17,56 83,56 83,60 17,60" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
-                           </svg>
-                         )}
-                       </div>
-                     </div>
-                   )}
+                    <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center drop-shadow-md">
+                      <div className="w-full h-full flex items-center justify-center transition-all duration-300">
+                        {(!entity.isOn || isDisabled || editorSettings.mode === 'edit') ? (
+                          <svg viewBox="0 0 100 100" width="100%" height="100%">
+                            <path d="M 10 90 L 10 35 L 50 15 L 90 35 L 90 90 Z" fill="none" stroke="#003855" strokeWidth="3" strokeLinejoin="round" />
+                            <rect x="22" y="42" width="56" height="48" fill="none" stroke="#003855" strokeWidth="2.5" strokeLinejoin="round" />
+                            <line x1="22" y1="54" x2="78" y2="54" stroke="#003855" strokeWidth="2" />
+                            <line x1="22" y1="66" x2="78" y2="66" stroke="#003855" strokeWidth="2" />
+                            <line x1="22" y1="78" x2="78" y2="78" stroke="#003855" strokeWidth="2" />
+                            <rect x="27" y="45" width="12" height="6" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round" />
+                            <rect x="44" y="45" width="12" height="6" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round" />
+                            <rect x="61" y="45" width="12" height="6" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round" />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 100 100" width="100%" height="100%">
+                            <path d="M 10 90 L 10 35 L 50 15 L 90 35 L 90 90 Z" fill="white" stroke="#003855" strokeWidth="3" strokeLinejoin="round" />
+                            <rect x="28" y="45" width="44" height="35" fill="#0A2D42" stroke="#003855" strokeWidth="2" />
+                            <line x1="22" y1="90" x2="28" y2="80" stroke="#003855" strokeWidth="2.5" strokeLinecap="round"/>
+                            <line x1="78" y1="90" x2="72" y2="80" stroke="#003855" strokeWidth="2.5" strokeLinecap="round"/>
+                            <line x1="28" y1="80" x2="72" y2="80" stroke="#003855" strokeWidth="2.5" strokeLinecap="round"/>
+                            <line x1="28" y1="42" x2="28" y2="80" stroke="#003855" strokeWidth="2.5"/>
+                            <line x1="72" y1="42" x2="72" y2="80" stroke="#003855" strokeWidth="2.5"/>
+                            <rect x="22" y="42" width="56" height="48" fill="none" stroke="#003855" strokeWidth="2.5" strokeLinejoin="round" />
+                            <line x1="25.5" y1="58" x2="25.5" y2="90" stroke="#003855" strokeWidth="1.5" />
+                            <line x1="74.5" y1="58" x2="74.5" y2="90" stroke="#003855" strokeWidth="1.5" />
+                            <polygon points="26,43 74,43 78,48 22,48" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
+                            <polygon points="29,44.5 41,44.5 42,47 26,47" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round"/>
+                            <polygon points="44,44.5 56,44.5 56,47 44,47" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round"/>
+                            <polygon points="59,44.5 71,44.5 74,47 58,47" fill="#1C5D82" stroke="#003855" strokeWidth="1.5" strokeLinejoin="round"/>
+                            <polygon points="22,48 78,48 81,52 19,52" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
+                            <polygon points="19,52 81,52 83,56 17,56" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
+                            <polygon points="17,56 83,56 83,60 17,60" fill="white" stroke="#003855" strokeWidth="2" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
              )})}
            </div>
