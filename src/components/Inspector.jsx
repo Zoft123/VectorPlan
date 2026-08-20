@@ -13,7 +13,6 @@ export function Inspector({
   return (
     <div className="w-72 md:w-80 flex-shrink-0 flex flex-col gap-6 overflow-y-auto pr-2 pb-2 custom-scrollbar">
       
-      {}
       <div className="bg-white dark:bg-slate-950 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <h2 className="font-semibold mb-4 flex items-center gap-2"><Icons.Sun /> Editor Settings</h2>
         
@@ -57,7 +56,6 @@ export function Inspector({
         </div>
       </div>
 
-      {}
       <div className="bg-white dark:bg-slate-950 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <h2 className="font-semibold mb-4 flex items-center gap-2"><Icons.Upload /> Blueprint Asset</h2>
         <label className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors text-center group">
@@ -79,7 +77,6 @@ export function Inspector({
         </div>
       </div>
 
-      {}
       <div className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden z-20 flex flex-col flex-shrink-0 min-h-[400px]">
         <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
           <h2 className="font-semibold flex items-center gap-2"><Icons.Pen /> Inspector</h2>
@@ -378,27 +375,27 @@ export function Inspector({
                        </div>
                      </div>
                    )}
-
-                   {/* Action Buttons */}
-                   <div className="mt-8 pt-4 border-t border-red-100 dark:border-red-900/30 flex gap-3">
-                     <button 
-                       onClick={() => duplicateEntity(selectedEntity.id)}
-                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg transition-colors text-sm font-semibold"
-                     >
-                       <Icons.Copy /> Duplicate
-                     </button>
-                     <button 
-                       onClick={() => {
-                         setEntities(prev => prev.filter(e => e.id !== selectedEntity.id));
-                         setSelectedId(null);
-                       }}
-                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg transition-colors text-sm font-semibold"
-                     >
-                       <Icons.Trash /> Delete
-                     </button>
-                   </div>
                 </>
              )}
+
+             {/* Action Buttons (Moved outside the conditional so it applies to ALL entity types!) */}
+             <div className="mt-8 pt-4 border-t border-red-100 dark:border-red-900/30 flex gap-3">
+               <button 
+                 onClick={() => duplicateEntity(selectedEntity.id)}
+                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-lg transition-colors text-sm font-semibold"
+               >
+                 <Icons.Copy /> Duplicate
+               </button>
+               <button 
+                 onClick={() => {
+                   setEntities(prev => prev.filter(e => e.id !== selectedEntity.id));
+                   setSelectedId(null);
+                 }}
+                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg transition-colors text-sm font-semibold"
+               >
+                 <Icons.Trash /> Delete
+               </button>
+             </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-slate-500 text-center space-y-3">
