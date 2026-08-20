@@ -1,4 +1,3 @@
-/* STREAMING_CHUNK:Setting up the Inspector Panel layout... */
 import React from 'react';
 import { Icons } from '../utils/icons';
 
@@ -14,7 +13,7 @@ export function Inspector({
   return (
     <div className="w-72 md:w-80 flex-shrink-0 flex flex-col gap-6 overflow-y-auto pr-2 pb-2 custom-scrollbar">
       
-      {/* STREAMING_CHUNK:Rendering the Global Editor Settings... */}
+      {}
       <div className="bg-white dark:bg-slate-950 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <h2 className="font-semibold mb-4 flex items-center gap-2"><Icons.Sun /> Editor Settings</h2>
         
@@ -58,7 +57,7 @@ export function Inspector({
         </div>
       </div>
 
-      /* STREAMING_CHUNK:Rendering the Asset Uploader and Outputs... */
+      {}
       <div className="bg-white dark:bg-slate-950 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
         <h2 className="font-semibold mb-4 flex items-center gap-2"><Icons.Upload /> Blueprint Asset</h2>
         <label className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors text-center group">
@@ -80,7 +79,7 @@ export function Inspector({
         </div>
       </div>
 
-      /* STREAMING_CHUNK:Rendering the Entity Inspector properties... */
+      {}
       <div className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden z-20 flex flex-col flex-shrink-0 min-h-[400px]">
         <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
           <h2 className="font-semibold flex items-center gap-2"><Icons.Pen /> Inspector</h2>
